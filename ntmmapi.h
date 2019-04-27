@@ -146,6 +146,7 @@ typedef struct _MEMORY_REGION_INFORMATION
     };
     SIZE_T RegionSize;
     SIZE_T CommitSize;
+    ULONG_PTR PartitionId; // 19H1
 } MEMORY_REGION_INFORMATION, *PMEMORY_REGION_INFORMATION;
 
 // private 
@@ -175,8 +176,9 @@ typedef struct _MEMORY_WORKING_SET_EX_BLOCK
             ULONG_PTR Reserved : 3;
             ULONG_PTR SharedOriginal : 1;
             ULONG_PTR Bad : 1;
+            ULONG_PTR Win32GraphicsProtection : 4; // 19H1
 #ifdef _WIN64
-            ULONG_PTR ReservedUlong : 32;
+            ULONG_PTR ReservedUlong : 28;
 #endif
         };
         struct
@@ -269,7 +271,7 @@ typedef struct _MEMORY_FRAME_INFORMATION
 {
     ULONGLONG UseDescription : 4; // MMPFNUSE_*
     ULONGLONG ListDescription : 3; // MMPFNLIST_*
-    ULONGLONG Reserved0 : 1; // reserved for future expansion
+    ULONGLONG Cold : 1; // 19H1
     ULONGLONG Pinned : 1; // 1 - pinned, 0 - not pinned
     ULONGLONG DontUse : 48; // *_INFORMATION overlay
     ULONGLONG Priority : 3; // rev
@@ -516,7 +518,8 @@ typedef enum _VIRTUAL_MEMORY_INFORMATION_CLASS
     VmPrefetchInformation, // ULONG
     VmPagePriorityInformation,
     VmCfgCallTargetInformation, // CFG_CALL_TARGET_LIST_INFORMATION // REDSTONE2
-    VmPageDirtyStateInformation // REDSTONE3
+    VmPageDirtyStateInformation, // REDSTONE3
+    VmImageHotPatchInformation // 19H1
 } VIRTUAL_MEMORY_INFORMATION_CLASS;
 
 typedef struct _MEMORY_RANGE_ENTRY
@@ -531,6 +534,8 @@ typedef struct _CFG_CALL_TARGET_LIST_INFORMATION
     ULONG Reserved;
     PULONG NumberOfEntriesProcessed;
     PCFG_CALL_TARGET_INFO CallTargetInfo;
+    PVOID Section; // since REDSTONE5
+    ULONGLONG FileOffset;
 } CFG_CALL_TARGET_LIST_INFORMATION, *PCFG_CALL_TARGET_LIST_INFORMATION;
 #endif
 // end_private
@@ -591,6 +596,23 @@ NtCreateSection(
     _In_ ULONG AllocationAttributes,
     _In_opt_ HANDLE FileHandle
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtCreateSectionEx(
+    _Out_ PHANDLE SectionHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_opt_ PLARGE_INTEGER MaximumSize,
+    _In_ ULONG SectionPageProtection,
+    _In_ ULONG AllocationAttributes,
+    _In_opt_ HANDLE FileHandle,
+    _In_ PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS

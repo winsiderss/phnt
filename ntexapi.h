@@ -23,7 +23,7 @@ NTSTATUS
 NTAPI
 NtDelayExecution(
     _In_ BOOLEAN Alertable,
-    _In_ PLARGE_INTEGER DelayInterval
+    _In_opt_ PLARGE_INTEGER DelayInterval
     );
 
 // Environment values
@@ -1042,6 +1042,7 @@ typedef enum _WORKERFACTORYINFOCLASS
     WorkerFactoryTimeoutWaiters, // since THRESHOLD
     WorkerFactoryFlags,
     WorkerFactoryThreadSoftMaximum,
+    WorkerFactoryThreadCpuSets, // since REDSTONE5
     MaxWorkerFactoryInfoClass
 } WORKERFACTORYINFOCLASS, *PWORKERFACTORYINFOCLASS;
 
@@ -1433,6 +1434,12 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemSpeculationControlInformation, // SYSTEM_SPECULATION_CONTROL_INFORMATION // (CVE-2017-5715) REDSTONE3 and above.
     SystemDmaGuardPolicyInformation, // SYSTEM_DMA_GUARD_POLICY_INFORMATION
     SystemEnclaveLaunchControlInformation, // SYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION
+    SystemWorkloadAllowedCpuSetsInformation, // SYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION // since REDSTONE5
+    SystemCodeIntegrityUnlockModeInformation,
+    SystemLeapSecondInformation, // SYSTEM_LEAP_SECOND_INFORMATION
+    SystemFlags2Information,
+    SystemSecurityModelInformation, // SYSTEM_SECURITY_MODEL_INFORMATION // since 19H1
+    SystemCodeIntegritySyntheticCacheInformation,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS;
 
@@ -1967,6 +1974,16 @@ typedef struct _EVENT_TRACE_PROFILE_COUNTER_INFORMATION
     ULONG ProfileSource[1];
 } EVENT_TRACE_PROFILE_COUNTER_INFORMATION, *PEVENT_TRACE_PROFILE_COUNTER_INFORMATION;
 
+//typedef struct _PROFILE_SOURCE_INFO
+//{
+//    ULONG NextEntryOffset;
+//    ULONG Source;
+//    ULONG MinInterval;
+//    ULONG MaxInterval;
+//    PVOID Reserved;
+//    WCHAR Description[1];
+//} PROFILE_SOURCE_INFO, *PPROFILE_SOURCE_INFO;
+
 typedef struct _EVENT_TRACE_PROFILE_LIST_INFORMATION
 {
     EVENT_TRACE_INFORMATION_CLASS EventTraceInformationClass;
@@ -2096,10 +2113,49 @@ typedef struct _SYSTEM_RANGE_START_INFORMATION
     PVOID SystemRangeStart;
 } SYSTEM_RANGE_START_INFORMATION, *PSYSTEM_RANGE_START_INFORMATION;
 
+typedef struct _SYSTEM_VERIFIER_INFORMATION_LEGACY // pre-19H1
+{
+    ULONG NextEntryOffset;
+    ULONG Level;
+    UNICODE_STRING DriverName;
+
+    ULONG RaiseIrqls;
+    ULONG AcquireSpinLocks;
+    ULONG SynchronizeExecutions;
+    ULONG AllocationsAttempted;
+
+    ULONG AllocationsSucceeded;
+    ULONG AllocationsSucceededSpecialPool;
+    ULONG AllocationsWithNoTag;
+    ULONG TrimRequests;
+
+    ULONG Trims;
+    ULONG AllocationsFailed;
+    ULONG AllocationsFailedDeliberately;
+    ULONG Loads;
+
+    ULONG Unloads;
+    ULONG UnTrackedPool;
+    ULONG CurrentPagedPoolAllocations;
+    ULONG CurrentNonPagedPoolAllocations;
+
+    ULONG PeakPagedPoolAllocations;
+    ULONG PeakNonPagedPoolAllocations;
+
+    SIZE_T PagedPoolUsageInBytes;
+    SIZE_T NonPagedPoolUsageInBytes;
+    SIZE_T PeakPagedPoolUsageInBytes;
+    SIZE_T PeakNonPagedPoolUsageInBytes;
+} SYSTEM_VERIFIER_INFORMATION_LEGACY, *PSYSTEM_VERIFIER_INFORMATION_LEGACY;
+
 typedef struct _SYSTEM_VERIFIER_INFORMATION
 {
     ULONG NextEntryOffset;
     ULONG Level;
+    ULONG RuleClasses[2];
+    ULONG TriageContext;
+    ULONG AreAllDriversBeingVerified;
+
     UNICODE_STRING DriverName;
 
     ULONG RaiseIrqls;
@@ -2332,6 +2388,9 @@ typedef struct _SYSTEM_BOOT_ENVIRONMENT_INFORMATION
             ULONGLONG DbgHiberBoot : 1;
             ULONGLONG DbgSoftBoot : 1;
             ULONGLONG DbgMeasuredLaunch : 1;
+            ULONGLONG DbgMeasuredLaunchCapable : 1; // 19H1
+            ULONGLONG DbgSystemHiveReplace : 1;
+            ULONGLONG DbgMeasuredLaunchSmmProtections : 1;
         };
     };
 } SYSTEM_BOOT_ENVIRONMENT_INFORMATION, *PSYSTEM_BOOT_ENVIRONMENT_INFORMATION;
@@ -2590,7 +2649,22 @@ typedef struct _MEMORY_SCRUB_INFORMATION
 } MEMORY_SCRUB_INFORMATION, *PMEMORY_SCRUB_INFORMATION;
 
 // private
-typedef struct _PEBS_DS_SAVE_AREA
+typedef struct _PEBS_DS_SAVE_AREA32
+{
+    ULONG BtsBufferBase;
+    ULONG BtsIndex;
+    ULONG BtsAbsoluteMaximum;
+    ULONG BtsInterruptThreshold;
+    ULONG PebsBufferBase;
+    ULONG PebsIndex;
+    ULONG PebsAbsoluteMaximum;
+    ULONG PebsInterruptThreshold;
+    ULONG PebsGpCounterReset[8];
+    ULONG PebsFixedCounterReset[4];
+} PEBS_DS_SAVE_AREA32, *PPEBS_DS_SAVE_AREA32;
+
+// private
+typedef struct _PEBS_DS_SAVE_AREA64
 {
     ULONGLONG BtsBufferBase;
     ULONGLONG BtsIndex;
@@ -2600,10 +2674,15 @@ typedef struct _PEBS_DS_SAVE_AREA
     ULONGLONG PebsIndex;
     ULONGLONG PebsAbsoluteMaximum;
     ULONGLONG PebsInterruptThreshold;
-    ULONGLONG PebsCounterReset0;
-    ULONGLONG PebsCounterReset1;
-    ULONGLONG PebsCounterReset2;
-    ULONGLONG PebsCounterReset3;
+    ULONGLONG PebsGpCounterReset[8];
+    ULONGLONG PebsFixedCounterReset[4];
+} PEBS_DS_SAVE_AREA64, *PPEBS_DS_SAVE_AREA64;
+
+// private
+typedef union _PEBS_DS_SAVE_AREA
+{
+    PEBS_DS_SAVE_AREA32 As32Bit;
+    PEBS_DS_SAVE_AREA64 As64Bit;
 } PEBS_DS_SAVE_AREA, *PPEBS_DS_SAVE_AREA;
 
 // private
@@ -2780,7 +2859,7 @@ typedef union _ENERGY_STATE_DURATION
 
 typedef struct _PROCESS_ENERGY_VALUES
 {
-    ULONGLONG Cycles[2][4];
+    ULONGLONG Cycles[4][2];
     ULONGLONG DiskEnergy;
     ULONGLONG NetworkTailEnergy;
     ULONGLONG MBBTailEnergy;
@@ -2815,7 +2894,7 @@ typedef struct _PROCESS_ENERGY_VALUES_EXTENSION
 {
     union
     {
-        TIMELINE_BITMAP Timelines[14]; // 9 for REDSTONE2, 14 for REDSTONE3
+        TIMELINE_BITMAP Timelines[14]; // 9 for REDSTONE2, 14 for REDSTONE3/4/5
         struct
         {
             TIMELINE_BITMAP CpuTimeline;
@@ -2956,7 +3035,7 @@ typedef struct _SYSTEM_HYPERVISOR_DETAIL_INFORMATION
 // private
 typedef struct _SYSTEM_PROCESSOR_CYCLE_STATS_INFORMATION
 {
-    ULONGLONG Cycles[2][4];
+    ULONGLONG Cycles[4][2];
 } SYSTEM_PROCESSOR_CYCLE_STATS_INFORMATION, *PSYSTEM_PROCESSOR_CYCLE_STATS_INFORMATION;
 
 // private
@@ -2991,9 +3070,10 @@ typedef struct _SYSTEM_ISOLATED_USER_MODE_INFORMATION
     BOOLEAN DebugEnabled : 1;
     BOOLEAN FirmwarePageProtection : 1;
     BOOLEAN EncryptionKeyAvailable : 1;
-    BOOLEAN SpareFlags : 1;
+    BOOLEAN SpareFlags : 2;
     BOOLEAN TrustletRunning : 1;
-    BOOLEAN SpareFlags2 : 1;
+    BOOLEAN HvciDisableAllowed : 1;
+    BOOLEAN SpareFlags2 : 6;
     BOOLEAN Spare0[6];
     ULONGLONG Spare1;
 } SYSTEM_ISOLATED_USER_MODE_INFORMATION, *PSYSTEM_ISOLATED_USER_MODE_INFORMATION;
@@ -3144,10 +3224,9 @@ typedef struct _SYSTEM_CODEINTEGRITY_UNLOCK_INFORMATION
         struct
         {
             ULONG Locked : 1;
-            ULONG Unlockable : 1;
-            ULONG UnlockApplied : 1;
-            ULONG UnlockIdValid : 1; // REDSTONE4
-            ULONG Reserved : 28;
+            ULONG UnlockApplied : 1; // Unlockable field removed 19H1
+            ULONG UnlockIdValid : 1;
+            ULONG Reserved : 29;
         };
     };
     UCHAR UnlockId[32]; // REDSTONE4
@@ -3183,7 +3262,10 @@ typedef struct _SYSTEM_KERNEL_VA_SHADOW_INFORMATION
             ULONG KvaShadowInvpcid : 1;
             ULONG KvaShadowRequired : 1; // REDSTONE4
             ULONG KvaShadowRequiredAvailable : 1;
-            ULONG Reserved : 26;
+            ULONG InvalidPteBit : 6;
+            ULONG L1DataCacheFlushSupported : 1;
+            ULONG L1TerminalFaultMitigationPresent : 1;
+            ULONG Reserved : 18;
         };
     };
 } SYSTEM_KERNEL_VA_SHADOW_INFORMATION, *PSYSTEM_KERNEL_VA_SHADOW_INFORMATION;
@@ -3218,12 +3300,23 @@ typedef struct _SYSTEM_SPECULATION_CONTROL_INFORMATION
             ULONG IbrsPresent : 1;
             ULONG StibpPresent : 1;
             ULONG SmepPresent : 1;
-            ULONG MemoryDisambiguationDisableAvailable : 1; // REDSTONE4 (CVE-2018-3639)
-            ULONG MemoryDisambiguationDisableSupported : 1;
-            ULONG MemoryDisambiguationDisabledSystemWide : 1;
-            ULONG MemoryDisambiguationDisabledKernel : 1;
-            ULONG MemoryDisambiguationDisableRequired : 1;
-            ULONG Reserved : 19;
+            ULONG SpeculativeStoreBypassDisableAvailable : 1; // REDSTONE4 (CVE-2018-3639)
+            ULONG SpeculativeStoreBypassDisableSupported : 1;
+            ULONG SpeculativeStoreBypassDisabledSystemWide : 1;
+            ULONG SpeculativeStoreBypassDisabledKernel : 1;
+            ULONG SpeculativeStoreBypassDisableRequired : 1;
+            ULONG BpbDisabledKernelToUser : 1;
+            ULONG SpecCtrlRetpolineEnabled : 1;
+            ULONG SpecCtrlImportOptimizationEnabled : 1;
+            ULONG EnhancedIbrs : 1; // since 19H1
+            ULONG HvL1tfStatusAvailable : 1;
+            ULONG HvL1tfProcessorNotAffected : 1;
+            ULONG HvL1tfMigitationEnabled : 1;
+            ULONG HvL1tfMigitationNotEnabled_Hardware : 1;
+            ULONG HvL1tfMigitationNotEnabled_LoadOption : 1;
+            ULONG HvL1tfMigitationNotEnabled_CoreScheduler : 1;
+            ULONG EnhancedIbrsReported : 1;
+            ULONG Reserved : 8;
         };
     };
 } SYSTEM_SPECULATION_CONTROL_INFORMATION, *PSYSTEM_SPECULATION_CONTROL_INFORMATION;
@@ -3239,6 +3332,28 @@ typedef struct _SYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION
 {
     UCHAR EnclaveLaunchSigner[32];
 } SYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION, *PSYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION;
+
+// private
+typedef struct _SYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION
+{
+    ULONGLONG WorkloadClass;
+    ULONGLONG CpuSets[1];
+} SYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION, *PSYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION;
+
+// private
+typedef struct _SYSTEM_SECURITY_MODEL_INFORMATION
+{
+    union
+    {
+        ULONG SecurityModelFlags;
+        struct
+        {
+            ULONG SModeAdminlessEnabled : 1;
+            ULONG AllowDeviceOwnerProtectionDowngrade : 1;
+            ULONG Reserved : 30;
+        };
+    };
+} SYSTEM_SECURITY_MODEL_INFORMATION, *PSYSTEM_SECURITY_MODEL_INFORMATION;
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
 
@@ -3564,7 +3679,8 @@ typedef struct _KUSER_SHARED_DATA
             UCHAR Reserved : 2;
         };
     };
-    UCHAR Reserved6[2];
+
+    USHORT CyclesPerYield;
 
     volatile ULONG ActiveConsoleId;
 
@@ -3662,38 +3778,20 @@ typedef struct _KUSER_SHARED_DATA
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TickCountMultiplier) == 0x4);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, InterruptTime) == 0x8);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SystemTime) == 0x14);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TimeZoneBias) == 0x20);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ImageNumberLow) == 0x2c);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ImageNumberHigh) == 0x2e);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, NtSystemRoot) == 0x30);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, MaxStackTraceDepth) == 0x238);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, CryptoExponent) == 0x23c);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TimeZoneId) == 0x240);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, LargePageMinimum) == 0x244);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, NtProductType) == 0x264);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ProductTypeIsValid) == 0x268);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, NtMajorVersion) == 0x26c);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, NtMinorVersion) == 0x270);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ProcessorFeatures) == 0x274);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved1) == 0x2b4);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved3) == 0x2b8);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TimeSlip) == 0x2bc);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, AlternativeArchitecture) == 0x2c0);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SystemExpirationDate) == 0x2c8);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SuiteMask) == 0x2d0);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, KdDebuggerEnabled) == 0x2d4);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ActiveConsoleId) == 0x2d8);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, DismountCount) == 0x2dc);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ComPlusPackage) == 0x2e0);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, LastSystemRITEventTickCount) == 0x2e4);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, NumberOfPhysicalPages) == 0x2e8);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SafeBootMode) == 0x2ec);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TestRetInstruction) == 0x2f8);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SystemCallPad) == 0x310);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TickCount) == 0x320);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TickCountQuad) == 0x320);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XState) == 0x3d8);
-//C_ASSERT(sizeof(KUSER_SHARED_DATA) == 0x708);
+//C_ASSERT(sizeof(KUSER_SHARED_DATA) == 0x70C); // VS2017 has some weird issue with this.
 
 #define USER_SHARED_DATA ((KUSER_SHARED_DATA * const)0x7ffe0000)
 

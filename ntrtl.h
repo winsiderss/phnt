@@ -1399,7 +1399,7 @@ VOID
 NTAPI
 RtlInitEmptyUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_ PWCHAR Buffer,
+    _In_opt_ PWCHAR Buffer,
     _In_ USHORT MaximumLength
     )
 {
@@ -1415,7 +1415,7 @@ FORCEINLINE VOID RtlInitUnicodeString(
     )
 {
     if (SourceString)
-        DestinationString->MaximumLength = (DestinationString->Length = (USHORT)(wcslen(SourceString) * sizeof(WCHAR))) + sizeof(WCHAR);
+        DestinationString->MaximumLength = (DestinationString->Length = (USHORT)(wcslen(SourceString) * sizeof(WCHAR))) + sizeof(UNICODE_NULL);
     else
         DestinationString->MaximumLength = DestinationString->Length = 0;
 
@@ -2530,6 +2530,11 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS
     PVOID PackageDependencyData;
     ULONG ProcessGroupId;
     ULONG LoaderThreads;
+
+    UNICODE_STRING RedirectionDllName; // REDSTONE4
+    UNICODE_STRING HeapPartitionName; // 19H1
+    ULONG_PTR DefaultThreadpoolCpuSetMasks;
+    ULONG DefaultThreadpoolCpuSetMaskCount;
 } RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
 
 #define RTL_USER_PROC_PARAMS_NORMALIZED 0x00000001
@@ -2625,6 +2630,17 @@ RtlCreateUserProcess(
     _In_ BOOLEAN InheritHandles,
     _In_opt_ HANDLE DebugPort,
     _In_opt_ HANDLE TokenHandle, // used to be ExceptionPort
+    _Out_ PRTL_USER_PROCESS_INFORMATION ProcessInformation
+    );
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlCreateUserProcessEx(
+    _In_ PUNICODE_STRING NtImagePathName,
+    _In_ PRTL_USER_PROCESS_PARAMETERS ProcessParameters,
+    _In_ BOOLEAN InheritHandles,
+    _Reserved_ ULONG Flags,
     _Out_ PRTL_USER_PROCESS_INFORMATION ProcessInformation
     );
 
@@ -3268,7 +3284,7 @@ NTAPI
 RtlSetEnvironmentVariable(
     _In_opt_ PVOID *Environment,
     _In_ PUNICODE_STRING Name,
-    _In_ PUNICODE_STRING Value
+    _In_opt_ PUNICODE_STRING Value
     );
 
 #if (PHNT_VERSION >= PHNT_VISTA)
@@ -3383,6 +3399,13 @@ ULONG
 NTAPI
 RtlIsDosDeviceName_U(
     _In_ PWSTR DosFileName
+    );
+
+NTSYSAPI
+RTL_PATH_TYPE
+NTAPI
+RtlDetermineDosPathNameType_Ustr(
+    _In_ PCUNICODE_STRING DosFileName
     );
 
 NTSYSAPI
@@ -4071,6 +4094,13 @@ RtlWalkHeap(
 #define HeapDetailedFailureInformation 0x80000001
 #define HeapSetDebuggingInformation 0x80000002 // q; s: HEAP_DEBUGGING_INFORMATION
 
+typedef enum _HEAP_COMPATIBILITY_MODE
+{
+    HEAP_COMPATIBILITY_STANDARD = 0UL,
+    HEAP_COMPATIBILITY_LAL = 1UL,
+    HEAP_COMPATIBILITY_LFH = 2UL,
+} HEAP_COMPATIBILITY_MODE;
+
 typedef struct _PROCESS_HEAP_INFORMATION
 {
     ULONG_PTR ReserveSize;
@@ -4096,8 +4126,11 @@ typedef struct _HEAP_EXTENDED_INFORMATION
     ULONG Level;
     PVOID CallbackRoutine;
     PVOID CallbackContext;
-    PROCESS_HEAP_INFORMATION ProcessHeapInformation;
-    HEAP_INFORMATION HeapInformation;
+    union
+    {
+        PROCESS_HEAP_INFORMATION ProcessHeapInformation;
+        HEAP_INFORMATION HeapInformation;
+    };
 } HEAP_EXTENDED_INFORMATION, *PHEAP_EXTENDED_INFORMATION;
 
 // rev
@@ -7129,7 +7162,9 @@ RtlGetFrame(
     VOID
     );
 
-#define RTL_STACK_WALKING_MODE_FRAMES_TO_SKIP_SHIFT 8
+#define RTL_WALK_USER_MODE_STACK 0x00000001
+#define RTL_WALK_VALID_FLAGS 0x00000001
+#define RTL_STACK_WALKING_MODE_FRAMES_TO_SKIP_SHIFT 0x00000008
 
 // private
 NTSYSAPI
@@ -7454,6 +7489,7 @@ typedef struct _RTL_IMAGE_MITIGATION_PAYLOAD_RESTRICTION_POLICY
     RTL_IMAGE_MITIGATION_POLICY EnableRopStackPivot;
     RTL_IMAGE_MITIGATION_POLICY EnableRopCallerCheck;
     RTL_IMAGE_MITIGATION_POLICY EnableRopSimExec;
+    WCHAR EafPlusModuleList[512]; // 19H1
 } RTL_IMAGE_MITIGATION_PAYLOAD_RESTRICTION_POLICY, *PRTL_IMAGE_MITIGATION_PAYLOAD_RESTRICTION_POLICY;
 
 // rev
@@ -7623,6 +7659,15 @@ RtlCheckTokenMembershipEx(
     _In_ PSID SidToCheck,
     _In_ ULONG Flags, // CTMF_VALID_FLAGS
     _Out_ PBOOLEAN IsMember
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryTokenHostIdAsUlong64(
+    _In_ HANDLE TokenHandle,
+    _Out_ PULONG64 HostId // (WIN://PKGHOSTID)
     );
 
 // rev

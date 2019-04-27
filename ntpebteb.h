@@ -109,7 +109,8 @@ typedef struct _PEB
             ULONG ProcessUsingFTH : 1;
             ULONG ProcessPreviouslyThrottled : 1;
             ULONG ProcessCurrentlyThrottled : 1;
-            ULONG ReservedBits0 : 25;
+            ULONG ProcessImagesHotPatched : 1; // REDSTONE5
+            ULONG ReservedBits0 : 24;
         };
     };
     union
@@ -117,7 +118,7 @@ typedef struct _PEB
         PVOID KernelCallbackTable;
         PVOID UserSharedInfoPtr;
     };
-    ULONG SystemReserved[1];
+    ULONG SystemReserved;
     ULONG AtlThunkSListPtr32;
     PAPI_SET_NAMESPACE ApiSetMap;
     ULONG TlsExpansionCounter;
@@ -182,11 +183,13 @@ typedef struct _PEB
 
     SIZE_T MinimumStackCommit;
 
-    PVOID *FlsCallback;
-    LIST_ENTRY FlsListHead;
-    PVOID FlsBitmap;
-    ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
-    ULONG FlsHighIndex;
+    PVOID SparePointers[4]; // 19H1 (previously FlsCallback to FlsHighIndex)
+    ULONG SpareUlongs[5]; // 19H1
+    //PVOID* FlsCallback;
+    //LIST_ENTRY FlsListHead;
+    //PVOID FlsBitmap;
+    //ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
+    //ULONG FlsHighIndex;
 
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
@@ -212,16 +215,29 @@ typedef struct _PEB
     ULONG CloudFileDiagFlags; // REDSTONE4
     CHAR PlaceholderCompatibilityMode;
     CHAR PlaceholderCompatibilityModeReserved[7];
+    struct _LEAP_SECOND_DATA *LeapSecondData; // REDSTONE5
+    union
+    {
+        ULONG LeapSecondFlags;
+        struct
+        {
+            ULONG SixtySecondEnabled : 1;
+            ULONG Reserved : 31;
+        };
+    };
+    ULONG NtGlobalFlag2;
 } PEB, *PPEB;
 
 #ifdef _WIN64
 C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x2C0);
 //C_ASSERT(sizeof(PEB) == 0x7B0); // REDSTONE3
-C_ASSERT(sizeof(PEB) == 0x7B8); // REDSTONE4
+//C_ASSERT(sizeof(PEB) == 0x7B8); // REDSTONE4
+C_ASSERT(sizeof(PEB) == 0x7C8); // REDSTONE5 // 19H1
 #else
 C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x1D4);
 //C_ASSERT(sizeof(PEB) == 0x468); // REDSTONE3
-C_ASSERT(sizeof(PEB) == 0x470);
+//C_ASSERT(sizeof(PEB) == 0x470); // REDSTONE4
+C_ASSERT(sizeof(PEB) == 0x480); // REDSTONE5 // 19H1
 #endif
 
 #define GDI_BATCH_BUFFER_SIZE 310
