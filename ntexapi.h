@@ -1292,7 +1292,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemComPlusPackage, // q; s
     SystemNumaAvailableMemory, // 60
     SystemProcessorPowerInformation, // q: SYSTEM_PROCESSOR_POWER_INFORMATION
-    SystemEmulationBasicInformation, // q
+    SystemEmulationBasicInformation,
     SystemEmulationProcessorInformation,
     SystemExtendedHandleInformation, // q: SYSTEM_HANDLE_INFORMATION_EX
     SystemLostDelayedWriteInformation, // q: ULONG
@@ -1331,7 +1331,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemSystemPartitionInformation, // q: SYSTEM_SYSTEM_PARTITION_INFORMATION
     SystemSystemDiskInformation, // q: SYSTEM_SYSTEM_DISK_INFORMATION
     SystemProcessorPerformanceDistribution, // q: SYSTEM_PROCESSOR_PERFORMANCE_DISTRIBUTION // 100
-    SystemNumaProximityNodeInformation, // q
+    SystemNumaProximityNodeInformation,
     SystemDynamicTimeZoneInformation, // q; s (requires SeTimeZonePrivilege)
     SystemCodeIntegrityInformation, // q: SYSTEM_CODEINTEGRITY_INFORMATION // SeCodeIntegrityQueryInformation
     SystemProcessorMicrocodeUpdateInformation, // s
@@ -1339,7 +1339,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemVirtualAddressInformation, // q: SYSTEM_VA_LIST_INFORMATION[]; s: SYSTEM_VA_LIST_INFORMATION[] (requires SeIncreaseQuotaPrivilege) // MmQuerySystemVaInformation
     SystemLogicalProcessorAndGroupInformation, // q: SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX // since WIN7 // KeQueryLogicalProcessorRelationship
     SystemProcessorCycleTimeInformation, // q: SYSTEM_PROCESSOR_CYCLE_TIME_INFORMATION[]
-    SystemStoreInformation, // q; s // SmQueryStoreInformation
+    SystemStoreInformation, // q; s: SYSTEM_STORE_INFORMATION // SmQueryStoreInformation
     SystemRegistryAppendString, // s: SYSTEM_REGISTRY_APPEND_STRING_PARAMETERS // 110
     SystemAitSamplingValue, // s: ULONG (requires SeProfileSingleProcessPrivilege)
     SystemVhdBootInformation, // q: SYSTEM_VHD_BOOT_INFORMATION
@@ -1351,7 +1351,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemVerifierCountersInformation, // q: SYSTEM_VERIFIER_COUNTERS_INFORMATION
     SystemPagedPoolInformationEx, // q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypePagedPool)
     SystemSystemPtesInformationEx, // q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypeSystemPtes) // 120
-    SystemNodeDistanceInformation, // q
+    SystemNodeDistanceInformation,
     SystemAcpiAuditInformation, // q: SYSTEM_ACPI_AUDIT_INFORMATION // HaliQuerySystemInformation -> HalpAuditQueryResults, info class 26
     SystemBasicPerformanceInformation, // q: SYSTEM_BASIC_PERFORMANCE_INFORMATION // name:wow64:whNtQuerySystemInformation_SystemBasicPerformanceInformation
     SystemQueryPerformanceCounterInformation, // q: SYSTEM_QUERY_PERFORMANCE_COUNTER_INFORMATION // since WIN7 SP1
@@ -1381,7 +1381,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemFullProcessInformation, // q: SYSTEM_PROCESS_INFORMATION with SYSTEM_PROCESS_INFORMATION_EXTENSION (requires admin)
     SystemKernelDebuggerInformationEx, // q: SYSTEM_KERNEL_DEBUGGER_INFORMATION_EX
     SystemBootMetadataInformation, // 150
-    SystemSoftRebootInformation,
+    SystemSoftRebootInformation, // q: ULONG
     SystemElamCertificateInformation, // s: SYSTEM_ELAM_CERTIFICATE_INFORMATION
     SystemOfflineDumpConfigInformation,
     SystemProcessorFeaturesInformation, // q: SYSTEM_PROCESSOR_FEATURES_INFORMATION
@@ -1393,7 +1393,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemProcessorCycleStatsInformation, // q: SYSTEM_PROCESSOR_CYCLE_STATS_INFORMATION // 160
     SystemVmGenerationCountInformation,
     SystemTrustedPlatformModuleInformation, // q: SYSTEM_TPM_INFORMATION
-    SystemKernelDebuggerFlags,
+    SystemKernelDebuggerFlags, // SYSTEM_KERNEL_DEBUGGER_FLAGS
     SystemCodeIntegrityPolicyInformation, // q: SYSTEM_CODEINTEGRITYPOLICY_INFORMATION
     SystemIsolatedUserModeInformation, // q: SYSTEM_ISOLATED_USER_MODE_INFORMATION
     SystemHardwareSecurityTestInterfaceResultsInformation,
@@ -1416,28 +1416,28 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemCodeIntegrityCertificateInformation, // q: SYSTEM_CODEINTEGRITY_CERTIFICATE_INFORMATION
     SystemPhysicalMemoryInformation, // q: SYSTEM_PHYSICAL_MEMORY_INFORMATION // since REDSTONE2
     SystemControlFlowTransition,
-    SystemKernelDebuggingAllowed,
+    SystemKernelDebuggingAllowed, // s: ULONG
     SystemActivityModerationExeState, // SYSTEM_ACTIVITY_MODERATION_EXE_STATE
     SystemActivityModerationUserSettings, // SYSTEM_ACTIVITY_MODERATION_USER_SETTINGS
     SystemCodeIntegrityPoliciesFullInformation,
     SystemCodeIntegrityUnlockInformation, // SYSTEM_CODEINTEGRITY_UNLOCK_INFORMATION // 190
     SystemIntegrityQuotaInformation,
     SystemFlushInformation, // q: SYSTEM_FLUSH_INFORMATION
-    SystemProcessorIdleMaskInformation, // since REDSTONE3
+    SystemProcessorIdleMaskInformation, // q: ULONG_PTR // since REDSTONE3
     SystemSecureDumpEncryptionInformation,
     SystemWriteConstraintInformation, // SYSTEM_WRITE_CONSTRAINT_INFORMATION
     SystemKernelVaShadowInformation, // SYSTEM_KERNEL_VA_SHADOW_INFORMATION
     SystemHypervisorSharedPageInformation, // SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION // since REDSTONE4
     SystemFirmwareBootPerformanceInformation,
     SystemCodeIntegrityVerificationInformation, // SYSTEM_CODEINTEGRITYVERIFICATION_INFORMATION
-    SystemFirmwarePartitionInformation, // 200
+    SystemFirmwarePartitionInformation, // SYSTEM_FIRMWARE_PARTITION_INFORMATION // 200
     SystemSpeculationControlInformation, // SYSTEM_SPECULATION_CONTROL_INFORMATION // (CVE-2017-5715) REDSTONE3 and above.
     SystemDmaGuardPolicyInformation, // SYSTEM_DMA_GUARD_POLICY_INFORMATION
     SystemEnclaveLaunchControlInformation, // SYSTEM_ENCLAVE_LAUNCH_CONTROL_INFORMATION
     SystemWorkloadAllowedCpuSetsInformation, // SYSTEM_WORKLOAD_ALLOWED_CPU_SET_INFORMATION // since REDSTONE5
     SystemCodeIntegrityUnlockModeInformation,
     SystemLeapSecondInformation, // SYSTEM_LEAP_SECOND_INFORMATION
-    SystemFlags2Information,
+    SystemFlags2Information, // q: SYSTEM_FLAGS_INFORMATION
     SystemSecurityModelInformation, // SYSTEM_SECURITY_MODEL_INFORMATION // since 19H1
     SystemCodeIntegritySyntheticCacheInformation,
     MaxSystemInfoClass
@@ -2486,6 +2486,38 @@ typedef struct _SYSTEM_VA_LIST_INFORMATION
     SIZE_T AllocationFailures;
 } SYSTEM_VA_LIST_INFORMATION, *PSYSTEM_VA_LIST_INFORMATION;
 
+// rev
+typedef enum _SYSTEM_STORE_INFORMATION_CLASS
+{
+    SystemStoreCompressionInformation = 22 // q: SYSTEM_STORE_COMPRESSION_INFORMATION
+} SYSTEM_STORE_INFORMATION_CLASS;
+
+// rev
+#define SYSTEM_STORE_INFORMATION_VERSION 1
+
+// rev
+typedef struct _SYSTEM_STORE_INFORMATION
+{
+    _In_ ULONG Version;
+    _In_ SYSTEM_STORE_INFORMATION_CLASS StoreInformationClass;
+    _Inout_ PVOID Data;
+    _Inout_ ULONG Length;
+} SYSTEM_STORE_INFORMATION, *PSYSTEM_STORE_INFORMATION;
+
+// rev
+#define SYSTEM_STORE_COMPRESSION_INFORMATION_VERSION 3
+
+// rev
+typedef struct _SYSTEM_STORE_COMPRESSION_INFORMATION
+{
+    ULONG Version;
+    ULONG CompressionPid;
+    ULONGLONG CompressionWorkingSetSize;
+    ULONGLONG CompressSize;
+    ULONGLONG CompressedSize;
+    ULONGLONG NonCompressedSize;
+} SYSTEM_STORE_COMPRESSION_INFORMATION, *PSYSTEM_STORE_COMPRESSION_INFORMATION;
+
 // private
 typedef struct _SYSTEM_REGISTRY_APPEND_STRING_PARAMETERS
 {
@@ -3053,6 +3085,12 @@ typedef struct _SYSTEM_VSM_PROTECTION_INFORMATION
 } SYSTEM_VSM_PROTECTION_INFORMATION, *PSYSTEM_VSM_PROTECTION_INFORMATION;
 
 // private
+typedef struct _SYSTEM_KERNEL_DEBUGGER_FLAGS
+{
+    UCHAR KernelDebuggerIgnoreUmExceptions;
+} SYSTEM_KERNEL_DEBUGGER_FLAGS, *PSYSTEM_KERNEL_DEBUGGER_FLAGS;
+
+// private
 typedef struct _SYSTEM_CODEINTEGRITYPOLICY_INFORMATION
 {
     ULONG Options;
@@ -3283,6 +3321,12 @@ typedef struct _SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION
 {
     PVOID HypervisorSharedUserVa;
 } SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION, *PSYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION;
+
+// private
+typedef struct _SYSTEM_FIRMWARE_PARTITION_INFORMATION
+{
+    UNICODE_STRING FirmwarePartition;
+} SYSTEM_FIRMWARE_PARTITION_INFORMATION, *PSYSTEM_FIRMWARE_PARTITION_INFORMATION;
 
 // private
 typedef struct _SYSTEM_SPECULATION_CONTROL_INFORMATION
