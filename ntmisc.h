@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -58,17 +58,58 @@ NtTraceEvent(
     _In_ PVOID Fields
     );
 
+typedef enum _TRACE_CONTROL_INFORMATION_CLASS
+{
+    TraceControlStartLogger = 1,
+    TraceControlStopLogger = 2,
+    TraceControlQueryLogger = 3,
+    TraceControlUpdateLogger = 4,
+    TraceControlFlushLogger = 5,
+    TraceControlIncrementLoggerFile = 6,
+
+    TraceControlRealtimeConnect = 11,
+    TraceControlWdiDispatchControl = 13,
+    TraceControlRealtimeDisconnectConsumerByHandle = 14,
+
+    TraceControlReceiveNotification = 16,
+    TraceControlEnableGuid = 17,
+    TraceControlSendReplyDataBlock = 18,
+    TraceControlReceiveReplyDataBlock = 19,
+    TraceControlWdiUpdateSem = 20,
+    TraceControlGetTraceGuidList = 21,
+    TraceControlGetTraceGuidInfo = 22,
+    TraceControlEnumerateTraceGuids = 23,
+
+    TraceControlQueryReferenceTime = 25,
+    TraceControlTrackProviderBinary = 26,
+    TraceControlAddNotificationEvent = 27,
+    TraceControlUpdateDisallowList = 28,
+
+    TraceControlUseDescriptorTypeUm = 31,
+    TraceControlGetTraceGroupList = 32,
+    TraceControlGetTraceGroupInfo = 33,
+    TraceControlTraceSetDisallowList= 34,
+    TraceControlSetCompressionSettings = 35,
+    TraceControlGetCompressionSettings= 36,
+    TraceControlUpdatePeriodicCaptureState = 37,
+    TraceControlGetPrivateSessionTraceHandle = 38,
+    TraceControlRegisterPrivateSession = 39,
+    TraceControlQuerySessionDemuxObject = 40,
+    TraceControlSetProviderBinaryTracking = 41,
+    TraceControlMaxLoggers = 42,
+    TraceControlMaxPmcCounter = 43
+} TRACE_CONTROL_INFORMATION_CLASS;
+
 #if (PHNT_VERSION >= PHNT_VISTA)
-// private
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtTraceControl(
-    _In_ ULONG FunctionCode,
-    _In_reads_bytes_opt_(InBufferLen) PVOID InBuffer,
-    _In_ ULONG InBufferLen,
-    _Out_writes_bytes_opt_(OutBufferLen) PVOID OutBuffer,
-    _In_ ULONG OutBufferLen,
+    _In_ TRACE_CONTROL_INFORMATION_CLASS TraceInformationClass,
+    _In_reads_bytes_opt_(InputBufferLength) PVOID InputBuffer,
+    _In_ ULONG InputBufferLength,
+    _Out_writes_bytes_opt_(TraceInformationLength) PVOID TraceInformation,
+    _In_ ULONG TraceInformationLength,
     _Out_ PULONG ReturnLength
     );
 #endif

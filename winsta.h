@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 

@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -250,7 +250,7 @@ typedef struct _REG_NOTIFY_INFORMATION
 
 typedef struct _KEY_PID_ARRAY
 {
-    HANDLE PID;
+    HANDLE ProcessId;
     UNICODE_STRING KeyName;
 } KEY_PID_ARRAY, *PKEY_PID_ARRAY;
 
@@ -615,7 +615,7 @@ NTAPI
 NtQueryOpenSubKeysEx(
     _In_ POBJECT_ATTRIBUTES TargetKey,
     _In_ ULONG BufferLength,
-    _Out_writes_bytes_(BufferLength) PVOID Buffer,
+    _Out_writes_bytes_opt_(BufferLength) PVOID Buffer,
     _Out_ PULONG RequiredSize
     );
 

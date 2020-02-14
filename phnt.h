@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -50,6 +50,7 @@
 #define PHNT_REDSTONE4 105
 #define PHNT_REDSTONE5 106
 #define PHNT_19H1 107
+#define PHNT_19H2 108
 
 #ifndef PHNT_MODE
 #define PHNT_MODE PHNT_MODE_USER

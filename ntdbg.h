@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -272,7 +272,7 @@ NtWaitForDebugEvent(
     _In_ HANDLE DebugObjectHandle,
     _In_ BOOLEAN Alertable,
     _In_opt_ PLARGE_INTEGER Timeout,
-    _Out_ PVOID WaitStateChange
+    _Out_ PDBGUI_WAIT_STATE_CHANGE WaitStateChange
     );
 
 // Debugging UI

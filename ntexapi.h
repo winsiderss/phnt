@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -1027,14 +1027,14 @@ NtSetWnfProcessNotificationEvent(
 
 typedef enum _WORKERFACTORYINFOCLASS
 {
-    WorkerFactoryTimeout,
-    WorkerFactoryRetryTimeout,
-    WorkerFactoryIdleTimeout,
+    WorkerFactoryTimeout, // q; s: LARGE_INTEGER
+    WorkerFactoryRetryTimeout, // q; s: LARGE_INTEGER
+    WorkerFactoryIdleTimeout, // q; s: LARGE_INTEGER
     WorkerFactoryBindingCount,
-    WorkerFactoryThreadMinimum,
-    WorkerFactoryThreadMaximum,
-    WorkerFactoryPaused,
-    WorkerFactoryBasicInformation,
+    WorkerFactoryThreadMinimum, // q; s: ULONG
+    WorkerFactoryThreadMaximum, // q; s: ULONG
+    WorkerFactoryPaused, // ULONG or BOOLEAN
+    WorkerFactoryBasicInformation, // WORKER_FACTORY_BASIC_INFORMATION
     WorkerFactoryAdjustThreadGoal,
     WorkerFactoryCallbackType,
     WorkerFactoryStackInformation, // 10
@@ -1571,7 +1571,7 @@ typedef struct _SYSTEM_THREAD_INFORMATION
     KPRIORITY Priority;
     LONG BasePriority;
     ULONG ContextSwitches;
-    ULONG ThreadState;
+    KTHREAD_STATE ThreadState;
     KWAIT_REASON WaitReason;
 } SYSTEM_THREAD_INFORMATION, *PSYSTEM_THREAD_INFORMATION;
 
@@ -2458,6 +2458,21 @@ typedef struct _SYSTEM_PROCESSOR_PERFORMANCE_DISTRIBUTION
     ULONG Offsets[1];
 } SYSTEM_PROCESSOR_PERFORMANCE_DISTRIBUTION, *PSYSTEM_PROCESSOR_PERFORMANCE_DISTRIBUTION;
 
+#define CODEINTEGRITY_OPTION_ENABLED 0x01
+#define CODEINTEGRITY_OPTION_TESTSIGN 0x02
+#define CODEINTEGRITY_OPTION_UMCI_ENABLED 0x04
+#define CODEINTEGRITY_OPTION_UMCI_AUDITMODE_ENABLED 0x08
+#define CODEINTEGRITY_OPTION_UMCI_EXCLUSIONPATHS_ENABLED 0x10
+#define CODEINTEGRITY_OPTION_TEST_BUILD 0x20
+#define CODEINTEGRITY_OPTION_PREPRODUCTION_BUILD 0x40
+#define CODEINTEGRITY_OPTION_DEBUGMODE_ENABLED 0x80
+#define CODEINTEGRITY_OPTION_FLIGHT_BUILD 0x100
+#define CODEINTEGRITY_OPTION_FLIGHTING_ENABLED 0x200
+#define CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED 0x400
+#define CODEINTEGRITY_OPTION_HVCI_KMCI_AUDITMODE_ENABLED 0x800
+#define CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED 0x1000
+#define CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED 0x2000
+
 // private
 typedef struct _SYSTEM_CODEINTEGRITY_INFORMATION
 {
@@ -2854,7 +2869,19 @@ typedef struct _SYSTEM_SECUREBOOT_POLICY_INFORMATION
 // private
 typedef struct _SYSTEM_PAGEFILE_INFORMATION_EX
 {
-    SYSTEM_PAGEFILE_INFORMATION Info;
+    union // HACK union declaration for convenience (dmex)
+    {
+        SYSTEM_PAGEFILE_INFORMATION Info;
+        struct
+        {
+            ULONG NextEntryOffset;
+            ULONG TotalSize;
+            ULONG TotalInUse;
+            ULONG PeakUsage;
+            UNICODE_STRING PageFileName;
+        };
+    };
+
     ULONG MinimumSize;
     ULONG MaximumSize;
 } SYSTEM_PAGEFILE_INFORMATION_EX, *PSYSTEM_PAGEFILE_INFORMATION_EX;
@@ -3360,7 +3387,10 @@ typedef struct _SYSTEM_SPECULATION_CONTROL_INFORMATION
             ULONG HvL1tfMigitationNotEnabled_LoadOption : 1;
             ULONG HvL1tfMigitationNotEnabled_CoreScheduler : 1;
             ULONG EnhancedIbrsReported : 1;
-            ULONG Reserved : 8;
+            ULONG MdsHardwareProtected : 1; // since 19H2
+            ULONG MbClearEnabled : 1;
+            ULONG MbClearReported : 1;
+            ULONG Reserved : 5;
         };
     };
 } SYSTEM_SPECULATION_CONTROL_INFORMATION, *PSYSTEM_SPECULATION_CONTROL_INFORMATION;

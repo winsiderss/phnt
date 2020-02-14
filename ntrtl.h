@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -1239,7 +1239,7 @@ RtlWakeAddressSingle(
 #ifndef PHNT_NO_INLINE_INIT_STRING
 FORCEINLINE VOID RtlInitString(
     _Out_ PSTRING DestinationString,
-    _In_opt_ PSTR SourceString
+    _In_opt_ PCSTR SourceString
     )
 {
     if (SourceString)
@@ -1247,7 +1247,7 @@ FORCEINLINE VOID RtlInitString(
     else
         DestinationString->MaximumLength = DestinationString->Length = 0;
 
-    DestinationString->Buffer = SourceString;
+    DestinationString->Buffer = (PCHAR)SourceString;
 }
 #else
 NTSYSAPI
@@ -1255,7 +1255,7 @@ VOID
 NTAPI
 RtlInitString(
     _Out_ PSTRING DestinationString,
-    _In_opt_ PSTR SourceString
+    _In_opt_ PCSTR SourceString
     );
 #endif
 
@@ -1272,7 +1272,7 @@ RtlInitStringEx(
 #ifndef PHNT_NO_INLINE_INIT_STRING
 FORCEINLINE VOID RtlInitAnsiString(
     _Out_ PANSI_STRING DestinationString,
-    _In_opt_ PSTR SourceString
+    _In_opt_ PCSTR SourceString
     )
 {
     if (SourceString)
@@ -1280,7 +1280,7 @@ FORCEINLINE VOID RtlInitAnsiString(
     else
         DestinationString->MaximumLength = DestinationString->Length = 0;
 
-    DestinationString->Buffer = SourceString;
+    DestinationString->Buffer = (PCHAR)SourceString;
 }
 #else
 NTSYSAPI
@@ -1288,7 +1288,7 @@ VOID
 NTAPI
 RtlInitAnsiString(
     _Out_ PANSI_STRING DestinationString,
-    _In_opt_ PSTR SourceString
+    _In_opt_ PCSTR SourceString
     );
 #endif
 
@@ -1374,7 +1374,7 @@ NTSTATUS
 NTAPI
 RtlAppendAsciizToString(
     _In_ PSTRING Destination,
-    _In_opt_ PSTR Source
+    _In_opt_ PCSTR Source
     );
 
 NTSYSAPI
@@ -1411,7 +1411,7 @@ RtlInitEmptyUnicodeString(
 #ifndef PHNT_NO_INLINE_INIT_STRING
 FORCEINLINE VOID RtlInitUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_opt_ PWSTR SourceString
+    _In_opt_ PCWSTR SourceString
     )
 {
     if (SourceString)
@@ -1419,7 +1419,7 @@ FORCEINLINE VOID RtlInitUnicodeString(
     else
         DestinationString->MaximumLength = DestinationString->Length = 0;
 
-    DestinationString->Buffer = SourceString;
+    DestinationString->Buffer = (PWCH)SourceString;
 }
 #else
 NTSYSAPI
@@ -1427,7 +1427,7 @@ VOID
 NTAPI
 RtlInitUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_opt_ PWSTR SourceString
+    _In_opt_ PCWSTR SourceString
     );
 #endif
 
@@ -1436,7 +1436,7 @@ NTSTATUS
 NTAPI
 RtlInitUnicodeStringEx(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_opt_ PWSTR SourceString
+    _In_opt_ PCWSTR SourceString
     );
 
 NTSYSAPI
@@ -1444,7 +1444,7 @@ BOOLEAN
 NTAPI
 RtlCreateUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_ PWSTR SourceString
+    _In_ PCWSTR SourceString
     );
 
 NTSYSAPI
@@ -1452,7 +1452,7 @@ BOOLEAN
 NTAPI
 RtlCreateUnicodeStringFromAsciiz(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_ PSTR SourceString
+    _In_ PCSTR SourceString
     );
 
 NTSYSAPI
@@ -1512,9 +1512,9 @@ NTSYSAPI
 LONG
 NTAPI
 RtlCompareUnicodeStrings(
-    _In_reads_(String1Length) PWCH String1,
+    _In_reads_(String1Length) PCWCH String1,
     _In_ SIZE_T String1Length,
-    _In_reads_(String2Length) PWCH String2,
+    _In_reads_(String2Length) PCWCH String2,
     _In_ SIZE_T String2Length,
     _In_ BOOLEAN CaseInSensitive
     );
@@ -1613,7 +1613,7 @@ NTSTATUS
 NTAPI
 RtlAppendUnicodeToString(
     _In_ PUNICODE_STRING Destination,
-    _In_opt_ PWSTR Source
+    _In_opt_ PCWSTR Source
     );
 
 NTSYSAPI
@@ -1727,7 +1727,7 @@ RtlMultiByteToUnicodeN(
     _Out_writes_bytes_to_(MaxBytesInUnicodeString, *BytesInUnicodeString) PWCH UnicodeString,
     _In_ ULONG MaxBytesInUnicodeString,
     _Out_opt_ PULONG BytesInUnicodeString,
-    _In_reads_bytes_(BytesInMultiByteString) PSTR MultiByteString,
+    _In_reads_bytes_(BytesInMultiByteString) PCSTR MultiByteString,
     _In_ ULONG BytesInMultiByteString
     );
 
@@ -1736,7 +1736,7 @@ NTSTATUS
 NTAPI
 RtlMultiByteToUnicodeSize(
     _Out_ PULONG BytesInUnicodeString,
-    _In_reads_bytes_(BytesInMultiByteString) PSTR MultiByteString,
+    _In_reads_bytes_(BytesInMultiByteString) PCSTR MultiByteString,
     _In_ ULONG BytesInMultiByteString
     );
 
@@ -1747,7 +1747,7 @@ RtlUnicodeToMultiByteN(
     _Out_writes_bytes_to_(MaxBytesInMultiByteString, *BytesInMultiByteString) PCHAR MultiByteString,
     _In_ ULONG MaxBytesInMultiByteString,
     _Out_opt_ PULONG BytesInMultiByteString,
-    _In_reads_bytes_(BytesInUnicodeString) PWCH UnicodeString,
+    _In_reads_bytes_(BytesInUnicodeString) PCWCH UnicodeString,
     _In_ ULONG BytesInUnicodeString
     );
 
@@ -1756,7 +1756,7 @@ NTSTATUS
 NTAPI
 RtlUnicodeToMultiByteSize(
     _Out_ PULONG BytesInMultiByteString,
-    _In_reads_bytes_(BytesInUnicodeString) PWCH UnicodeString,
+    _In_reads_bytes_(BytesInUnicodeString) PCWCH UnicodeString,
     _In_ ULONG BytesInUnicodeString
     );
 
@@ -1767,7 +1767,7 @@ RtlUpcaseUnicodeToMultiByteN(
     _Out_writes_bytes_to_(MaxBytesInMultiByteString, *BytesInMultiByteString) PCHAR MultiByteString,
     _In_ ULONG MaxBytesInMultiByteString,
     _Out_opt_ PULONG BytesInMultiByteString,
-    _In_reads_bytes_(BytesInUnicodeString) PWCH UnicodeString,
+    _In_reads_bytes_(BytesInUnicodeString) PCWCH UnicodeString,
     _In_ ULONG BytesInUnicodeString
     );
 
@@ -1778,7 +1778,7 @@ RtlOemToUnicodeN(
     _Out_writes_bytes_to_(MaxBytesInUnicodeString, *BytesInUnicodeString) PWSTR UnicodeString,
     _In_ ULONG MaxBytesInUnicodeString,
     _Out_opt_ PULONG BytesInUnicodeString,
-    _In_reads_bytes_(BytesInOemString) PCH OemString,
+    _In_reads_bytes_(BytesInOemString) PCCH OemString,
     _In_ ULONG BytesInOemString
     );
 
@@ -1789,7 +1789,7 @@ RtlUnicodeToOemN(
     _Out_writes_bytes_to_(MaxBytesInOemString, *BytesInOemString) PCHAR OemString,
     _In_ ULONG MaxBytesInOemString,
     _Out_opt_ PULONG BytesInOemString,
-    _In_reads_bytes_(BytesInUnicodeString) PWCH UnicodeString,
+    _In_reads_bytes_(BytesInUnicodeString) PCWCH UnicodeString,
     _In_ ULONG BytesInUnicodeString
     );
 
@@ -1800,7 +1800,7 @@ RtlUpcaseUnicodeToOemN(
     _Out_writes_bytes_to_(MaxBytesInOemString, *BytesInOemString) PCHAR OemString,
     _In_ ULONG MaxBytesInOemString,
     _Out_opt_ PULONG BytesInOemString,
-    _In_reads_bytes_(BytesInUnicodeString) PWCH UnicodeString,
+    _In_reads_bytes_(BytesInUnicodeString) PCWCH UnicodeString,
     _In_ ULONG BytesInUnicodeString
     );
 
@@ -1811,7 +1811,7 @@ RtlConsoleMultiByteToUnicodeN(
     _Out_writes_bytes_to_(MaxBytesInUnicodeString, *BytesInUnicodeString) PWCH UnicodeString,
     _In_ ULONG MaxBytesInUnicodeString,
     _Out_opt_ PULONG BytesInUnicodeString,
-    _In_reads_bytes_(BytesInMultiByteString) PCH MultiByteString,
+    _In_reads_bytes_(BytesInMultiByteString) PCCH MultiByteString,
     _In_ ULONG BytesInMultiByteString,
     _Out_ PULONG pdwSpecialChar
     );
@@ -1824,7 +1824,7 @@ RtlUTF8ToUnicodeN(
     _Out_writes_bytes_to_(UnicodeStringMaxByteCount, *UnicodeStringActualByteCount) PWSTR UnicodeStringDestination,
     _In_ ULONG UnicodeStringMaxByteCount,
     _Out_ PULONG UnicodeStringActualByteCount,
-    _In_reads_bytes_(UTF8StringByteCount) PCH UTF8StringSource,
+    _In_reads_bytes_(UTF8StringByteCount) PCCH UTF8StringSource,
     _In_ ULONG UTF8StringByteCount
     );
 #endif
@@ -1837,7 +1837,7 @@ RtlUnicodeToUTF8N(
     _Out_writes_bytes_to_(UTF8StringMaxByteCount, *UTF8StringActualByteCount) PCHAR UTF8StringDestination,
     _In_ ULONG UTF8StringMaxByteCount,
     _Out_ PULONG UTF8StringActualByteCount,
-    _In_reads_bytes_(UnicodeStringByteCount) PWCH UnicodeStringSource,
+    _In_reads_bytes_(UnicodeStringByteCount) PCWCH UnicodeStringSource,
     _In_ ULONG UnicodeStringByteCount
     );
 #endif
@@ -2049,7 +2049,7 @@ NTSTATUS
 NTAPI
 RtlIdnToAscii(
     _In_ ULONG Flags,
-    _In_ PWSTR SourceString,
+    _In_ PCWSTR SourceString,
     _In_ LONG SourceStringLength,
     _Out_writes_to_(*DestinationStringLength, *DestinationStringLength) PWSTR DestinationString,
     _Inout_ PLONG DestinationStringLength
@@ -2060,7 +2060,7 @@ NTSTATUS
 NTAPI
 RtlIdnToUnicode(
     _In_ ULONG Flags,
-    _In_ PWSTR SourceString,
+    _In_ PCWSTR SourceString,
     _In_ LONG SourceStringLength,
     _Out_writes_to_(*DestinationStringLength, *DestinationStringLength) PWSTR DestinationString,
     _Inout_ PLONG DestinationStringLength
@@ -2071,7 +2071,7 @@ NTSTATUS
 NTAPI
 RtlIdnToNameprepUnicode(
     _In_ ULONG Flags,
-    _In_ PWSTR SourceString,
+    _In_ PCWSTR SourceString,
     _In_ LONG SourceStringLength,
     _Out_writes_to_(*DestinationStringLength, *DestinationStringLength) PWSTR DestinationString,
     _Inout_ PLONG DestinationStringLength
@@ -2337,7 +2337,7 @@ NTSYSAPI
 BOOLEAN
 NTAPI
 RtlIsValidLocaleName(
-    _In_ PWSTR LocaleName,
+    _In_ PCWSTR LocaleName,
     _In_ ULONG Flags
     );
 
@@ -2346,7 +2346,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGetParentLocaleName(
-    _In_ PWSTR LocaleName,
+    _In_ PCWSTR LocaleName,
     _Inout_ PUNICODE_STRING ParentLocaleName,
     _In_ ULONG Flags,
     _In_ BOOLEAN AllocateDestinationString
@@ -2368,7 +2368,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlLocaleNameToLcid(
-    _In_ PWSTR LocaleName,
+    _In_ PCWSTR LocaleName,
     _Out_ PLCID lcid,
     _In_ ULONG Flags
     );
@@ -2610,8 +2610,8 @@ RtlDeNormalizeProcessParams(
 typedef struct _RTL_USER_PROCESS_INFORMATION
 {
     ULONG Length;
-    HANDLE Process;
-    HANDLE Thread;
+    HANDLE ProcessHandle;
+    HANDLE ThreadHandle;
     CLIENT_ID ClientId;
     SECTION_IMAGE_INFORMATION ImageInformation;
 } RTL_USER_PROCESS_INFORMATION, *PRTL_USER_PROCESS_INFORMATION;
@@ -3173,7 +3173,7 @@ PVOID
 NTAPI
 RtlFindExportedRoutineByName(
     _In_ PVOID BaseOfImage,
-    _In_ PSTR RoutineName
+    _In_ PCSTR RoutineName
     );
 
 #endif
@@ -3270,10 +3270,10 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlSetEnvironmentVar(
-    _In_opt_ PWSTR *Environment,
-    _In_reads_(NameLength) PWSTR Name,
+    _Inout_opt_ PVOID *Environment,
+    _In_reads_(NameLength) PCWSTR Name,
     _In_ SIZE_T NameLength,
-    _In_reads_(ValueLength) PWSTR Value,
+    _In_reads_(ValueLength) PCWSTR Value,
     _In_ SIZE_T ValueLength
     );
 #endif
@@ -3282,7 +3282,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlSetEnvironmentVariable(
-    _In_opt_ PVOID *Environment,
+    _Inout_opt_ PVOID *Environment,
     _In_ PUNICODE_STRING Name,
     _In_opt_ PUNICODE_STRING Value
     );
@@ -3294,7 +3294,7 @@ NTSTATUS
 NTAPI
 RtlQueryEnvironmentVariable(
     _In_opt_ PVOID Environment,
-    _In_reads_(NameLength) PWSTR Name,
+    _In_reads_(NameLength) PCWSTR Name,
     _In_ SIZE_T NameLength,
     _Out_writes_(ValueLength) PWSTR Value,
     _In_ SIZE_T ValueLength,
@@ -3308,7 +3308,7 @@ NTAPI
 RtlQueryEnvironmentVariable_U(
     _In_opt_ PVOID Environment,
     _In_ PUNICODE_STRING Name,
-    _Out_ PUNICODE_STRING Value
+    _Inout_ PUNICODE_STRING Value
     );
 
 #if (PHNT_VERSION >= PHNT_VISTA)
@@ -3318,7 +3318,7 @@ NTSTATUS
 NTAPI
 RtlExpandEnvironmentStrings(
     _In_opt_ PVOID Environment,
-    _In_reads_(SrcLength) PWSTR Src,
+    _In_reads_(SrcLength) PCWSTR Src,
     _In_ SIZE_T SrcLength,
     _Out_writes_(DstLength) PWSTR Dst,
     _In_ SIZE_T DstLength,
@@ -3332,7 +3332,7 @@ NTAPI
 RtlExpandEnvironmentStrings_U(
     _In_opt_ PVOID Environment,
     _In_ PUNICODE_STRING Source,
-    _Out_ PUNICODE_STRING Destination,
+    _Inout_ PUNICODE_STRING Destination,
     _Out_opt_ PULONG ReturnedLength
     );
 
@@ -3340,7 +3340,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlSetEnvironmentStrings(
-    _In_ PWCHAR NewEnvironment,
+    _In_ PCWCHAR NewEnvironment,
     _In_ SIZE_T NewEnvironmentSize
     );
 
@@ -3391,7 +3391,7 @@ NTSYSAPI
 RTL_PATH_TYPE
 NTAPI
 RtlDetermineDosPathNameType_U(
-    _In_ PWSTR DosFileName
+    _In_ PCWSTR DosFileName
     );
 
 NTSYSAPI
@@ -3405,7 +3405,7 @@ NTSYSAPI
 ULONG
 NTAPI
 RtlIsDosDeviceName_U(
-    _In_ PWSTR DosFileName
+    _In_ PCWSTR DosFileName
     );
 
 NTSYSAPI
@@ -3419,7 +3419,7 @@ NTSYSAPI
 ULONG
 NTAPI
 RtlGetFullPathName_U(
-    _In_ PWSTR FileName,
+    _In_ PCWSTR FileName,
     _In_ ULONG BufferLength,
     _Out_writes_bytes_(BufferLength) PWSTR Buffer,
     _Out_opt_ PWSTR *FilePart
@@ -3431,7 +3431,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGetFullPathName_UEx(
-    _In_ PWSTR FileName,
+    _In_ PCWSTR FileName,
     _In_ ULONG BufferLength,
     _Out_writes_bytes_(BufferLength) PWSTR Buffer,
     _Out_opt_ PWSTR *FilePart,
@@ -3481,7 +3481,7 @@ NTSYSAPI
 BOOLEAN
 NTAPI
 RtlDosPathNameToNtPathName_U(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3492,7 +3492,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlDosPathNameToNtPathName_U_WithStatus(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3505,7 +3505,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlDosLongPathNameToNtPathName_U_WithStatus(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3517,7 +3517,7 @@ NTSYSAPI
 BOOLEAN
 NTAPI
 RtlDosPathNameToRelativeNtPathName_U(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3529,7 +3529,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlDosPathNameToRelativeNtPathName_U_WithStatus(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3542,7 +3542,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlDosLongPathNameToRelativeNtPathName_U_WithStatus(
-    _In_ PWSTR DosFileName,
+    _In_ PCWSTR DosFileName,
     _Out_ PUNICODE_STRING NtFileName,
     _Out_opt_ PWSTR *FilePart,
     _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
@@ -3562,9 +3562,9 @@ NTSYSAPI
 ULONG
 NTAPI
 RtlDosSearchPath_U(
-    _In_ PWSTR Path,
-    _In_ PWSTR FileName,
-    _In_opt_ PWSTR Extension,
+    _In_ PCWSTR Path,
+    _In_ PCWSTR FileName,
+    _In_opt_ PCWSTR Extension,
     _In_ ULONG BufferLength,
     _Out_writes_bytes_(BufferLength) PWSTR Buffer,
     _Out_opt_ PWSTR *FilePart
@@ -3593,7 +3593,7 @@ NTSYSAPI
 BOOLEAN
 NTAPI
 RtlDoesFileExists_U(
-    _In_ PWSTR FileName
+    _In_ PCWSTR FileName
     );
 
 NTSYSAPI
@@ -4091,6 +4091,7 @@ RtlWalkHeap(
 #define HeapOptimizeResources 0x3 // q; s: HEAP_OPTIMIZE_RESOURCES_INFORMATION 
 #define HeapTaggingInformation 0x4
 #define HeapStackDatabase 0x5
+#define HeapMemoryLimit 0x6 // 19H2
 #define HeapDetailedFailureInformation 0x80000001
 #define HeapSetDebuggingInformation 0x80000002 // q; s: HEAP_DEBUGGING_INFORMATION
 
@@ -4834,7 +4835,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlCharToInteger(
-    _In_ PSTR String,
+    _In_ PCSTR String,
     _In_opt_ ULONG Base,
     _Out_ PULONG Value
     );
@@ -5869,6 +5870,14 @@ RtlReplaceSidInSd(
 NTSYSAPI
 NTSTATUS
 NTAPI
+RtlLengthSidAsUnicodeString(
+    _In_ PSID Sid,
+    _Out_ PULONG StringLength
+    );
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 RtlConvertSidToUnicodeString(
     _Inout_ PUNICODE_STRING UnicodeString,
     _In_ PSID Sid,
@@ -6664,14 +6673,14 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGetVersion(
-    _Out_ PRTL_OSVERSIONINFOW lpVersionInformation
+    _Out_ PRTL_OSVERSIONINFOEXW VersionInformation // PRTL_OSVERSIONINFOW
     );
 
 NTSYSAPI
 NTSTATUS
 NTAPI
 RtlVerifyVersionInfo(
-    _In_ PRTL_OSVERSIONINFOEXW VersionInfo,
+    _In_ PRTL_OSVERSIONINFOEXW VersionInformation, // PRTL_OSVERSIONINFOW
     _In_ ULONG TypeMask,
     _In_ ULONGLONG ConditionMask
     );
@@ -6835,7 +6844,7 @@ NTAPI
 RtlDeleteTimer(
     _In_ HANDLE TimerQueueHandle,
     _In_ HANDLE TimerToCancel,
-    _In_ HANDLE Event
+    _In_opt_ HANDLE Event
     );
 
 NTSYSAPI
@@ -6929,7 +6938,7 @@ NTSTATUS
 NTAPI
 RtlQueryRegistryValues(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path,
+    _In_ PCWSTR Path,
     _In_ PRTL_QUERY_REGISTRY_TABLE QueryTable,
     _In_ PVOID Context,
     _In_opt_ PVOID Environment
@@ -6941,7 +6950,7 @@ NTSTATUS
 NTAPI
 RtlQueryRegistryValuesEx(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path,
+    _In_ PCWSTR Path,
     _In_ PRTL_QUERY_REGISTRY_TABLE QueryTable,
     _In_ PVOID Context,
     _In_opt_ PVOID Environment
@@ -6952,8 +6961,8 @@ NTSTATUS
 NTAPI
 RtlWriteRegistryValue(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path,
-    _In_ PWSTR ValueName,
+    _In_ PCWSTR Path,
+    _In_ PCWSTR ValueName,
     _In_ ULONG ValueType,
     _In_ PVOID ValueData,
     _In_ ULONG ValueLength
@@ -6964,8 +6973,8 @@ NTSTATUS
 NTAPI
 RtlDeleteRegistryValue(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path,
-    _In_ PWSTR ValueName
+    _In_ PCWSTR Path,
+    _In_ PCWSTR ValueName
     );
 
 // Thread profiling
@@ -7672,7 +7681,7 @@ RtlQueryTokenHostIdAsUlong64(
 
 // rev
 NTSYSAPI
-NTSTATUS
+BOOLEAN
 NTAPI
 RtlIsParentOfChildAppContainer(
     _In_ PSID ParentAppContainerSid,

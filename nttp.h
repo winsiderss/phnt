@@ -1,5 +1,5 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sf.io/ 
+ * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
  *
  * You can redistribute this file and/or modify it under the terms of the 
  * Attribution 4.0 International (CC BY 4.0) license. 
@@ -57,7 +57,7 @@ VOID
 NTAPI
 TpSetPoolMaxThreads(
     _Inout_ PTP_POOL Pool,
-    _In_ LONG MaxThreads
+    _In_ ULONG MaxThreads
     );
 
 // private
@@ -66,7 +66,7 @@ NTSTATUS
 NTAPI
 TpSetPoolMinThreads(
     _Inout_ PTP_POOL Pool,
-    _In_ LONG MinThreads
+    _In_ ULONG MinThreads
     );
 
 #if (PHNT_VERSION >= PHNT_WIN7)
@@ -134,7 +134,7 @@ NTAPI
 TpCallbackReleaseSemaphoreOnCompletion(
     _Inout_ PTP_CALLBACK_INSTANCE Instance,
     _In_ HANDLE Semaphore,
-    _In_ LONG ReleaseCount
+    _In_ ULONG ReleaseCount
     );
 
 // winbase:ReleaseMutexWhenCallbackReturns
@@ -255,9 +255,22 @@ NTAPI
 TpSetTimer(
     _Inout_ PTP_TIMER Timer,
     _In_opt_ PLARGE_INTEGER DueTime,
-    _In_ LONG Period,
-    _In_opt_ LONG WindowLength
+    _In_ ULONG Period,
+    _In_opt_ ULONG WindowLength
     );
+
+#if (PHNT_VERSION >= PHNT_WIN7)
+// winbase:SetThreadpoolTimerEx
+NTSYSAPI
+NTSTATUS
+NTAPI
+TpSetTimerEx(
+    _Inout_ PTP_TIMER Timer,
+    _In_opt_ PLARGE_INTEGER DueTime,
+    _In_ ULONG Period,
+    _In_opt_ ULONG WindowLength
+    );
+#endif
 
 // winbase:IsThreadpoolTimerSet
 NTSYSAPI
@@ -305,6 +318,19 @@ TpSetWait(
     _In_opt_ HANDLE Handle,
     _In_opt_ PLARGE_INTEGER Timeout
     );
+
+#if (PHNT_VERSION >= PHNT_WIN7)
+// winbase:SetThreadpoolWaitEx
+NTSYSAPI
+NTSTATUS
+NTAPI
+TpSetWaitEx(
+    _Inout_ PTP_WAIT Wait,
+    _In_opt_ HANDLE Handle,
+    _In_opt_ PLARGE_INTEGER Timeout,
+    _In_opt_ PVOID Reserved
+    );
+#endif
 
 // winbase:WaitForThreadpoolWaitCallbacks
 NTSYSAPI
