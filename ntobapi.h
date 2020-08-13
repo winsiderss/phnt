@@ -240,7 +240,7 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtClose(
-    _In_ HANDLE Handle
+    _In_ _Post_ptr_invalid_ HANDLE Handle
     );
 
 #if (PHNT_VERSION >= PHNT_THRESHOLD)

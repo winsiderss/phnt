@@ -1313,7 +1313,7 @@ NTSYSAPI
 VOID
 NTAPI
 RtlFreeOemString(
-    _In_ POEM_STRING OemString
+    _Inout_ POEM_STRING OemString
     );
 
 NTSYSAPI
@@ -1365,7 +1365,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlAppendStringToString(
-    _In_ PSTRING Destination,
+    _Inout_ PSTRING Destination,
     _In_ PSTRING Source
     );
 
@@ -1427,7 +1427,7 @@ VOID
 NTAPI
 RtlInitUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_opt_ PCWSTR SourceString
+    _In_opt_z_ PCWSTR SourceString
     );
 #endif
 
@@ -1436,15 +1436,17 @@ NTSTATUS
 NTAPI
 RtlInitUnicodeStringEx(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_opt_ PCWSTR SourceString
+    _In_opt_z_ PCWSTR SourceString
     );
 
+_Success_(return != 0)
+_Must_inspect_result_
 NTSYSAPI
 BOOLEAN
 NTAPI
 RtlCreateUnicodeString(
     _Out_ PUNICODE_STRING DestinationString,
-    _In_ PCWSTR SourceString
+    _In_z_ PCWSTR SourceString
     );
 
 NTSYSAPI
@@ -1705,6 +1707,15 @@ RtlUpcaseUnicodeStringToOemString(
 NTSYSAPI
 NTSTATUS
 NTAPI
+RtlOemStringToCountedUnicodeString(
+    _Inout_ PUNICODE_STRING DestinationString,
+    _In_ PCOEM_STRING SourceString,
+    _In_ BOOLEAN AllocateDestinationString
+    );
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 RtlUnicodeStringToCountedOemString(
     _Inout_ POEM_STRING DestinationString,
     _In_ PUNICODE_STRING SourceString,
@@ -1882,8 +1893,8 @@ NTSYSAPI
 VOID
 NTAPI
 RtlInitCodePageTable(
-    _In_ PUSHORT TableBase,
-    _Out_ PCPTABLEINFO CodePageTable
+    _In_reads_z_(2) PUSHORT TableBase,
+    _Inout_ PCPTABLEINFO CodePageTable
     );
 
 NTSYSAPI
@@ -2250,7 +2261,23 @@ RtlDecompressBufferEx(
     _In_reads_bytes_(CompressedBufferSize) PUCHAR CompressedBuffer,
     _In_ ULONG CompressedBufferSize,
     _Out_ PULONG FinalUncompressedSize,
-    _In_ PVOID WorkSpace
+    _In_opt_ PVOID WorkSpace
+    );
+#endif
+
+#if (PHNT_VERSION >= PHNT_WINBLUE)
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlDecompressBufferEx2(
+    _In_ USHORT CompressionFormat,
+    _Out_writes_bytes_to_(UncompressedBufferSize, *FinalUncompressedSize) PUCHAR UncompressedBuffer,
+    _In_ ULONG UncompressedBufferSize,
+    _In_reads_bytes_(CompressedBufferSize) PUCHAR CompressedBuffer,
+    _In_ ULONG CompressedBufferSize,
+    _In_ ULONG UncompressedChunkSize,
+    _Out_ PULONG FinalUncompressedSize,
+    _In_opt_ PVOID WorkSpace
     );
 #endif
 
@@ -2267,6 +2294,23 @@ RtlDecompressFragment(
     _Out_ PULONG FinalUncompressedSize,
     _In_ PVOID WorkSpace
     );
+
+#if (PHNT_VERSION >= PHNT_WINBLUE)
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlDecompressFragmentEx(
+    _In_ USHORT CompressionFormat,
+    _Out_writes_bytes_to_(UncompressedFragmentSize, *FinalUncompressedSize) PUCHAR UncompressedFragment,
+    _In_ ULONG UncompressedFragmentSize,
+    _In_reads_bytes_(CompressedBufferSize) PUCHAR CompressedBuffer,
+    _In_ ULONG CompressedBufferSize,
+    _In_range_(<, CompressedBufferSize) ULONG FragmentOffset,
+    _In_ ULONG UncompressedChunkSize,
+    _Out_ PULONG FinalUncompressedSize,
+    _In_ PVOID WorkSpace
+    );
+#endif
 
 NTSYSAPI
 NTSTATUS
@@ -2950,7 +2994,7 @@ NTSYSAPI
 VOID
 NTAPI
 RtlSetExtendedFeaturesMask(
-    __out PCONTEXT_EX ContextEx,
+    _Out_ PCONTEXT_EX ContextEx,
     _Out_ ULONG64 FeatureMask
     );
 
@@ -3194,33 +3238,90 @@ RtlGuardCheckLongJumpTarget(
 
 // Memory
 
+_Must_inspect_result_
 NTSYSAPI
 SIZE_T
 NTAPI
 RtlCompareMemoryUlong(
-    _In_ PVOID Source,
+    _In_reads_bytes_(Length) PVOID Source,
     _In_ SIZE_T Length,
     _In_ ULONG Pattern
     );
 
+#if defined(_M_AMD64)
+FORCEINLINE
+VOID
+RtlFillMemoryUlong(
+    _Out_writes_bytes_all_(Length) PVOID Destination,
+    _In_ SIZE_T Length,
+    _In_ ULONG Pattern
+    )
+{
+    PULONG Address = (PULONG)Destination;
+
+    //
+    // If the number of DWORDs is not zero, then fill the specified buffer
+    // with the specified pattern.
+    //
+
+    if ((Length /= 4) != 0) {
+
+        //
+        // If the destination is not quadword aligned (ignoring low bits),
+        // then align the destination by storing one DWORD.
+        //
+
+        if (((ULONG64)Address & 4) != 0) {
+            *Address = Pattern;
+            if ((Length -= 1) == 0) {
+                return;
+            }
+
+            Address += 1;
+        }
+
+        //
+        // If the number of QWORDs is not zero, then fill the destination
+        // buffer a QWORD at a time.
+        //
+
+         __stosq((PULONG64)(Address),
+                 Pattern | ((ULONG64)Pattern << 32),
+                 Length / 2);
+
+        if ((Length & 1) != 0) {
+            Address[Length - 1] = Pattern;
+        }
+    }
+
+    return;
+}
+#else
 NTSYSAPI
 VOID
 NTAPI
 RtlFillMemoryUlong(
-    _Out_ PVOID Destination,
+    _Out_writes_bytes_all_(Length) PVOID Destination,
     _In_ SIZE_T Length,
     _In_ ULONG Pattern
     );
+#endif
 
+#if defined(_M_AMD64)
+
+#define RtlFillMemoryUlonglong(Destination, Length, Pattern) \
+    __stosq((PULONG64)(Destination), Pattern, (Length) / 8)
+
+#else
 NTSYSAPI
 VOID
 NTAPI
 RtlFillMemoryUlonglong(
-    _Out_ PVOID Destination,
+    _Out_writes_bytes_all_(Length) PVOID Destination,
     _In_ SIZE_T Length,
     _In_ ULONGLONG Pattern
     );
-
+#endif
 // Environment
 
 NTSYSAPI
@@ -3632,8 +3733,8 @@ NTAPI
 RtlGenerate8dot3Name(
     _In_ PUNICODE_STRING Name,
     _In_ BOOLEAN AllowExtendedCharacters,
-    _In_ PGENERATE_NAME_CONTEXT Context,
-    _Out_ PUNICODE_STRING Name8dot3
+    _Inout_ PGENERATE_NAME_CONTEXT Context,
+    _Inout_ PUNICODE_STRING Name8dot3
     );
 
 #if (PHNT_VERSION >= PHNT_WIN8)
@@ -3767,6 +3868,9 @@ typedef struct _RTL_HEAP_INFORMATION
     PRTL_HEAP_ENTRY Entries;
 } RTL_HEAP_INFORMATION, *PRTL_HEAP_INFORMATION;
 
+#define RTL_HEAP_SIGNATURE 0xFFEEFFEEUL
+#define RTL_HEAP_SEGMENT_SIGNATURE 0xDDEEDDEEUL
+
 typedef struct _RTL_PROCESS_HEAPS
 {
     ULONG NumberOfHeaps;
@@ -3811,6 +3915,7 @@ typedef struct _RTL_HEAP_PARAMETERS
 #define HEAP_CLASS_8 0x00008000 // CSR port heap
 #define HEAP_CLASS_MASK 0x0000f000
 
+_Must_inspect_result_
 NTSYSAPI
 PVOID
 NTAPI
@@ -3827,9 +3932,12 @@ NTSYSAPI
 PVOID
 NTAPI
 RtlDestroyHeap(
-    _Frees_ptr_ PVOID HeapHandle
+    _In_ _Post_invalid_ PVOID HeapHandle
     );
 
+_Must_inspect_result_
+_Ret_maybenull_
+_Post_writable_byte_size_(Size)
 NTSYSAPI
 PVOID
 NTAPI
@@ -3839,6 +3947,18 @@ RtlAllocateHeap(
     _In_ SIZE_T Size
     );
 
+#if (PHNT_VERSION >= PHNT_WIN8)
+_Success_(return != 0)
+NTSYSAPI
+LOGICAL
+NTAPI
+RtlFreeHeap(
+    _In_ PVOID HeapHandle,
+    _In_opt_ ULONG Flags,
+    _Frees_ptr_opt_ PVOID BaseAddress
+    );
+#else
+_Success_(return)
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -3847,6 +3967,7 @@ RtlFreeHeap(
     _In_opt_ ULONG Flags,
     _Frees_ptr_opt_ PVOID BaseAddress
     );
+#endif
 
 NTSYSAPI
 SIZE_T
@@ -4575,6 +4696,16 @@ RtlQueryProcessDebugInformation(
     _Inout_ PRTL_DEBUG_INFORMATION Buffer
     );
 
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetProcessDebugInformation(
+    _In_ HANDLE UniqueProcessId,
+    _In_ ULONG Flags,
+    _Inout_ PRTL_DEBUG_INFORMATION Buffer
+    );
+
 // Messages
 
 NTSYSAPI
@@ -4796,6 +4927,7 @@ RtlUniform(
     _Inout_ PULONG Seed
     );
 
+_Ret_range_(<=, MAXLONG)
 NTSYSAPI
 ULONG
 NTAPI
@@ -4803,12 +4935,15 @@ RtlRandom(
     _Inout_ PULONG Seed
     );
 
+_Ret_range_(<=, MAXLONG)
 NTSYSAPI
 ULONG
 NTAPI
 RtlRandomEx(
     _Inout_ PULONG Seed
     );
+
+#define RTL_IMPORT_TABLE_HASH_REVISION 1
 
 NTSYSAPI
 NTSTATUS
@@ -5647,7 +5782,7 @@ RtlGetIntegerAtom(
 
 // SIDs
 
-_Check_return_
+_Must_inspect_result_
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5655,7 +5790,7 @@ RtlValidSid(
     _In_ PSID Sid
     );
 
-_Check_return_
+_Must_inspect_result_
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5664,7 +5799,7 @@ RtlEqualSid(
     _In_ PSID Sid2
     );
 
-_Check_return_
+_Must_inspect_result_
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5687,7 +5822,7 @@ RtlFreeSid(
     _In_ _Post_invalid_ PSID Sid
     );
 
-_Check_return_
+_Must_inspect_result_
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5704,6 +5839,19 @@ RtlAllocateAndInitializeSid(
     _In_ ULONG SubAuthority7,
     _Outptr_ PSID *Sid
     );
+
+#if (PHNT_VERSION >= PHNT_WIN8)
+_Must_inspect_result_
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlAllocateAndInitializeSidEx(
+    _In_ PSID_IDENTIFIER_AUTHORITY IdentifierAuthority,
+    _In_ UCHAR SubAuthorityCount,
+    _In_reads_(SubAuthorityCount) PULONG SubAuthorities,
+    _Outptr_ PSID *Sid
+    );
+#endif
 
 NTSYSAPI
 NTSTATUS
@@ -5760,7 +5908,7 @@ NTSTATUS
 NTAPI
 RtlCopySid(
     _In_ ULONG DestinationSidLength,
-    _In_reads_bytes_(DestinationSidLength) PSID DestinationSid,
+    _Out_writes_bytes_(DestinationSidLength) PSID DestinationSid,
     _In_ PSID SourceSid
     );
 
@@ -6023,7 +6171,7 @@ NTAPI
 RtlGetDaclSecurityDescriptor(
     _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
     _Out_ PBOOLEAN DaclPresent,
-    _Out_ PACL *Dacl,
+    _Outptr_result_maybenull_ PACL *Dacl,
     _Out_ PBOOLEAN DaclDefaulted
     );
 
@@ -6050,20 +6198,10 @@ RtlGetSaclSecurityDescriptor(
 NTSYSAPI
 NTSTATUS
 NTAPI
-RtlGetSaclSecurityDescriptor(
-    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _Out_ PBOOLEAN SaclPresent,
-    _Out_ PACL *Sacl,
-    _Out_ PBOOLEAN SaclDefaulted
-    );
-
-NTSYSAPI
-NTSTATUS
-NTAPI
 RtlSetOwnerSecurityDescriptor(
     _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
     _In_opt_ PSID Owner,
-    _In_opt_ BOOLEAN OwnerDefaulted
+    _In_ BOOLEAN OwnerDefaulted
     );
 
 NTSYSAPI
@@ -6071,7 +6209,7 @@ NTSTATUS
 NTAPI
 RtlGetOwnerSecurityDescriptor(
     _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _Out_ PSID *Owner,
+    _Outptr_result_maybenull_ PSID *Owner,
     _Out_ PBOOLEAN OwnerDefaulted
     );
 
@@ -6081,7 +6219,7 @@ NTAPI
 RtlSetGroupSecurityDescriptor(
     _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
     _In_opt_ PSID Group,
-    _In_opt_ BOOLEAN GroupDefaulted
+    _In_ BOOLEAN GroupDefaulted
     );
 
 NTSYSAPI
@@ -6089,7 +6227,7 @@ NTSTATUS
 NTAPI
 RtlGetGroupSecurityDescriptor(
     _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _Out_ PSID *Group,
+    _Outptr_result_maybenull_ PSID *Group,
     _Out_ PBOOLEAN GroupDefaulted
     );
 
@@ -7810,6 +7948,56 @@ RtlIsPartialPlaceholderFileInfo(
     _Out_ PBOOLEAN IsPartialPlaceholder
     );
 
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
+
+#undef PHCM_MAX
+#define PHCM_APPLICATION_DEFAULT ((CHAR)0)
+#define PHCM_DISGUISE_PLACEHOLDERS ((CHAR)1)
+#define PHCM_EXPOSE_PLACEHOLDERS ((CHAR)2)
+#define PHCM_MAX ((CHAR)2)
+
+#define PHCM_ERROR_INVALID_PARAMETER ((CHAR)-1)
+#define PHCM_ERROR_NO_TEB ((CHAR)-2)
+
+NTSYSAPI
+CHAR
+NTAPI
+RtlQueryThreadPlaceholderCompatibilityMode(
+    VOID
+    );
+
+NTSYSAPI
+CHAR
+NTAPI
+RtlSetThreadPlaceholderCompatibilityMode(
+    _In_ CHAR Mode
+    );
+
+#endif
+
+#if (PHNT_VERSION >= PHNT_REDSTONE4)
+
+#undef PHCM_MAX
+#define PHCM_DISGUISE_FULL_PLACEHOLDERS ((CHAR)3)
+#define PHCM_MAX ((CHAR)3)
+#define PHCM_ERROR_NO_PEB ((CHAR)-3)
+
+NTSYSAPI
+CHAR
+NTAPI
+RtlQueryProcessPlaceholderCompatibilityMode(
+    VOID
+    );
+
+NTSYSAPI
+CHAR
+NTAPI
+RtlSetProcessPlaceholderCompatibilityMode(
+    _In_ CHAR Mode
+    );
+
+#endif
+
 // rev
 NTSYSAPI
 BOOLEAN
@@ -7892,22 +8080,24 @@ RtlIsMultiUsersInSessionSku(
 // private
 typedef enum _RTL_BSD_ITEM_TYPE
 {
-    RtlBsdItemVersionNumber,
-    RtlBsdItemProductType,
-    RtlBsdItemAabEnabled,
-    RtlBsdItemAabTimeout,
-    RtlBsdItemBootGood,
-    RtlBsdItemBootShutdown,
-    RtlBsdSleepInProgress,
+    RtlBsdItemVersionNumber, // q; s: ULONG
+    RtlBsdItemProductType, // q; s: NT_PRODUCT_TYPE (ULONG)
+    RtlBsdItemAabEnabled, // q: s: BOOLEAN
+    RtlBsdItemAabTimeout, // q: s: UCHAR
+    RtlBsdItemBootGood, // q: s: BOOLEAN
+    RtlBsdItemBootShutdown, // q: s: BOOLEAN
+    RtlBsdSleepInProgress, // q: s: BOOLEAN
     RtlBsdPowerTransition,
-    RtlBsdItemBootAttemptCount,
-    RtlBsdItemBootCheckpoint,
-    RtlBsdItemBootId,
-    RtlBsdItemShutdownBootId,
-    RtlBsdItemReportedAbnormalShutdownBootId,
+    RtlBsdItemBootAttemptCount, // q: s: UCHAR
+    RtlBsdItemBootCheckpoint, // q: s: UCHAR
+    RtlBsdItemBootId, // q; s: ULONG (USER_SHARED_DATA->BootId)
+    RtlBsdItemShutdownBootId, // q; s: ULONG
+    RtlBsdItemReportedAbnormalShutdownBootId, // q; s: ULONG
     RtlBsdItemErrorInfo,
     RtlBsdItemPowerButtonPressInfo,
-    RtlBsdItemChecksum,
+    RtlBsdItemChecksum, // q: s: UCHAR
+    RtlBsdPowerTransitionExtension,
+    RtlBsdItemFeatureConfigurationState, // q; s: ULONG
     RtlBsdItemMax
 } RTL_BSD_ITEM_TYPE;
 
@@ -7964,6 +8154,30 @@ RtlCheckBootStatusIntegrity(
     _In_ HANDLE FileHandle, 
     _Out_ PBOOLEAN Verified
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetSystemBootStatus(
+    _In_ RTL_BSD_ITEM_TYPE BootStatusInformationClass,
+    _Out_ PVOID DataBuffer,
+    _In_ ULONG DataLength,
+    _Out_opt_ PULONG ReturnLength
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetSystemBootStatus(
+    _In_ RTL_BSD_ITEM_TYPE BootStatusInformationClass,
+    _In_ PVOID DataBuffer,
+    _In_ ULONG DataLength,
+    _Out_opt_ PULONG ReturnLength
+    );
+#endif
 
 // rev
 NTSYSAPI
@@ -8034,5 +8248,144 @@ RtlFlushSecureMemoryCache(
     _In_ PVOID MemoryCache,
     _In_opt_ SIZE_T MemoryLength
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
+
+// Feature configuration
+
+typedef struct __RTL_FEATURE_USAGE_REPORT
+{
+    ULONG FeatureId;
+    USHORT ReportingKind;
+    USHORT ReportingOptions;
+} RTL_FEATURE_USAGE_REPORT, *PRTL_FEATURE_USAGE_REPORT;
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlNotifyFeatureUsage(
+    _In_ PRTL_FEATURE_USAGE_REPORT FeatureUsageReport
+    );
+
+typedef enum _RTL_FEATURE_CONFIGURATION_TYPE
+{
+    RtlFeatureConfigurationBoot,
+    RtlFeatureConfigurationRuntime,
+    RtlFeatureConfigurationCount
+} RTL_FEATURE_CONFIGURATION_TYPE;
+
+// rev
+typedef struct _RTL_FEATURE_CONFIGURATION
+{
+    ULONG FeatureId;
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG Priority : 4;
+            ULONG EnabledState : 2;
+            ULONG IsWexpConfiguration : 1;
+            ULONG HasSubscriptions : 1;
+            ULONG Variant : 6;
+            ULONG VariantPayloadKind : 2;
+            ULONG Reserved : 16;
+        };
+    };
+    ULONG VariantPayload;
+} RTL_FEATURE_CONFIGURATION, *PRTL_FEATURE_CONFIGURATION;
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryFeatureConfiguration(
+    _In_ ULONG FeatureId,
+    _In_ RTL_FEATURE_CONFIGURATION_TYPE FeatureType,
+    _Inout_ PULONGLONG ChangeStamp,
+    _In_ PRTL_FEATURE_CONFIGURATION FeatureConfiguration
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetFeatureConfigurations(
+    _Inout_ PULONGLONG ChangeStamp,
+    _In_ RTL_FEATURE_CONFIGURATION_TYPE FeatureType,
+    _In_ PRTL_FEATURE_CONFIGURATION FeatureConfiguration,
+    _In_ ULONG FeatureConfigurationCount
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryAllFeatureConfigurations(
+    _In_ RTL_FEATURE_CONFIGURATION_TYPE FeatureType,
+    _Inout_ PULONGLONG ChangeStamp,
+    _Out_ PRTL_FEATURE_CONFIGURATION FeatureConfigurations,
+    _Inout_ PULONG FeatureConfigurationCount
+    );
+
+// rev
+NTSYSAPI
+ULONGLONG
+NTAPI
+RtlQueryFeatureConfigurationChangeStamp(
+    VOID
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryFeatureUsageNotificationSubscriptions(
+    _Out_ PRTL_FEATURE_CONFIGURATION FeatureConfiguration,
+    _Inout_ PULONG FeatureConfigurationCount
+    );
+
+typedef VOID (NTAPI *PRTL_FEATURE_CONFIGURATION_CHANGE_NOTIFICAION)(
+    _In_opt_ PVOID Context
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlRegisterFeatureConfigurationChangeNotification(
+    _In_ PRTL_FEATURE_CONFIGURATION_CHANGE_NOTIFICAION Callback,
+    _In_opt_ PVOID Context,
+    _Inout_opt_ PULONGLONG ChangeStamp,
+    _Out_ PHANDLE NotificationHandle
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlUnregisterFeatureConfigurationChangeNotification(
+    _In_ HANDLE NotificationHandle
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSubscribeForFeatureUsageNotification(
+    _In_ PRTL_FEATURE_CONFIGURATION FeatureConfiguration,
+    _In_ ULONG FeatureConfigurationCount
+    );
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlUnsubscribeFromFeatureUsageNotifications(
+    _In_ PRTL_FEATURE_CONFIGURATION FeatureConfiguration,
+    _In_ ULONG FeatureConfigurationCount
+    );
+#endif
 
 #endif

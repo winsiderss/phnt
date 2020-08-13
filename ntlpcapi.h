@@ -12,8 +12,6 @@
 #ifndef _NTLPCAPI_H
 #define _NTLPCAPI_H
 
-// Local Inter-process Communication
-
 #define PORT_CONNECT 0x0001
 #define PORT_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x1)
 

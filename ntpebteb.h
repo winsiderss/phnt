@@ -95,8 +95,9 @@ typedef struct _PEB
     PVOID SubSystemData;
     PVOID ProcessHeap;
     PRTL_CRITICAL_SECTION FastPebLock;
-    PVOID IFEOKey;
     PSLIST_HEADER AtlThunkSListPtr;
+    PVOID IFEOKey;
+
     union
     {
         ULONG CrossProcessFlags;
@@ -289,7 +290,9 @@ typedef struct _TEB
 #endif
     
     CHAR PlaceholderCompatibilityMode;
-    CHAR PlaceholderReserved[11];
+    BOOLEAN PlaceholderHydrationAlwaysExplicit;
+    CHAR PlaceholderReserved[10];
+
     ULONG ProxiedProcessId;
     ACTIVATION_CONTEXT_STACK ActivationStack;
     
@@ -305,6 +308,7 @@ typedef struct _TEB
 #endif
 
     BOOLEAN InstrumentationCallbackDisabled;
+    BOOLEAN UnalignedLoadStoreExceptions;
 #ifndef _WIN64
     UCHAR SpareBytes[23];
     ULONG TxFsContext;
@@ -380,8 +384,7 @@ typedef struct _TEB
     ULONG IsImpersonating;
     PVOID NlsCache;
     PVOID pShimData;
-    USHORT HeapVirtualAffinity;
-    USHORT LowFragHeapDataSlot;
+    ULONG HeapData;
     HANDLE CurrentTransactionHandle;
     PTEB_ACTIVE_FRAME ActiveFrame;
     PVOID FlsData;

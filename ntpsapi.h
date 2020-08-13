@@ -119,13 +119,13 @@ typedef enum _PROCESSINFOCLASS
     ProcessLdtInformation, // qs: PROCESS_LDT_INFORMATION // 10
     ProcessLdtSize, // s: PROCESS_LDT_SIZE
     ProcessDefaultHardErrorMode, // qs: ULONG
-    ProcessIoPortHandlers, // (kernel-mode only)
+    ProcessIoPortHandlers, // (kernel-mode only) // PROCESS_IO_PORT_HANDLER_INFORMATION
     ProcessPooledUsageAndLimits, // q: POOLED_USAGE_AND_LIMITS
     ProcessWorkingSetWatch, // q: PROCESS_WS_WATCH_INFORMATION[]; s: void
-    ProcessUserModeIOPL,
+    ProcessUserModeIOPL, // qs: ULONG (requires SeTcbPrivilege)
     ProcessEnableAlignmentFaultFixup, // s: BOOLEAN
     ProcessPriorityClass, // qs: PROCESS_PRIORITY_CLASS
-    ProcessWx86Information,
+    ProcessWx86Information, // qs: ULONG (requires SeTcbPrivilege) (VdmAllowed)
     ProcessHandleCount, // q: ULONG, PROCESS_HANDLE_INFORMATION // 20
     ProcessAffinityMask, // s: KAFFINITY
     ProcessPriorityBoost, // qs: ULONG
@@ -206,6 +206,8 @@ typedef enum _PROCESSINFOCLASS
     ProcessLeapSecondInformation, // PROCESS_LEAP_SECOND_INFORMATION
     ProcessFiberShadowStackAllocation, // PROCESS_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION // since 19H1
     ProcessFreeFiberShadowStackAllocation, // PROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION
+    ProcessAltSystemCallInformation, // since 20H1 // 100
+    ProcessDynamicEHContinuationTargets, // PROCESS_DYNAMIC_EH_CONTINUATION_TARGETS_INFORMATION
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 #endif
@@ -658,6 +660,7 @@ typedef struct _PROCESS_MITIGATION_POLICY_INFORMATION
         PROCESS_MITIGATION_PAYLOAD_RESTRICTION_POLICY PayloadRestrictionPolicy;
         PROCESS_MITIGATION_CHILD_PROCESS_POLICY ChildProcessPolicy;
         PROCESS_MITIGATION_SIDE_CHANNEL_ISOLATION_POLICY SideChannelIsolationPolicy;
+        PROCESS_MITIGATION_USER_SHADOW_STACK_POLICY UserShadowStackPolicy;
     };
 } PROCESS_MITIGATION_POLICY_INFORMATION, *PPROCESS_MITIGATION_POLICY_INFORMATION;
 
@@ -796,7 +799,6 @@ typedef struct _PROCESS_JOB_MEMORY_INFO
 typedef struct _PROCESS_CHILD_PROCESS_INFORMATION
 {
     BOOLEAN ProhibitChildProcesses;
-    //BOOLEAN EnableAutomaticOverride; // REDSTONE2
     BOOLEAN AlwaysAllowSecureChildProcess; // REDSTONE3
     BOOLEAN AuditProhibitChildProcesses;
 } PROCESS_CHILD_PROCESS_INFORMATION, *PPROCESS_CHILD_PROCESS_INFORMATION;
@@ -1162,7 +1164,7 @@ NtResumeProcess(
 // Windows 8 and above
 #define NtCurrentProcessToken() ((HANDLE)(LONG_PTR)-4)
 #define NtCurrentThreadToken() ((HANDLE)(LONG_PTR)-5)
-#define NtCurrentEffectiveToken() ((HANDLE)(LONG_PTR)-6)
+#define NtCurrentThreadEffectiveToken() ((HANDLE)(LONG_PTR)-6)
 #define NtCurrentSilo() ((HANDLE)(LONG_PTR)-1)
 
 // Not NT, but useful.
@@ -1391,14 +1393,14 @@ NtQueueApcThread(
 
 #if (PHNT_VERSION >= PHNT_WIN7)
 
-#define APC_FORCE_THREAD_SIGNAL ((HANDLE)1) // UserApcReserveHandle
+#define APC_FORCE_THREAD_SIGNAL ((HANDLE)1) // ReserveHandle
 
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtQueueApcThreadEx(
     _In_ HANDLE ThreadHandle,
-    _In_opt_ HANDLE UserApcReserveHandle,
+    _In_opt_ HANDLE ReserveHandle, // NtAllocateReserveObject
     _In_ PPS_APC_ROUTINE ApcRoutine,
     _In_opt_ PVOID ApcArgument1,
     _In_opt_ PVOID ApcArgument2,
