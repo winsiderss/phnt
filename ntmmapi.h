@@ -12,8 +12,6 @@
 #ifndef _NTMMAPI_H
 #define _NTMMAPI_H
 
-#if (PHNT_MODE == PHNT_MODE_KERNEL)
-
 // Protection constants
 
 #define PAGE_NOACCESS 0x01
@@ -35,42 +33,39 @@
 #define PAGE_ENCLAVE_UNVALIDATED    0x20000000
 
 // Region and section constants
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define MEM_COMMIT 0x1000
-#define MEM_RESERVE 0x2000
-#define MEM_DECOMMIT 0x4000
-#define MEM_RELEASE 0x8000
-#define MEM_FREE 0x10000
-#define MEM_PRIVATE 0x20000
-#define MEM_MAPPED 0x40000
-#define MEM_RESET 0x80000
-#define MEM_TOP_DOWN 0x100000
-#endif
-#define MEM_WRITE_WATCH 0x200000
-#define MEM_PHYSICAL 0x400000
-#define MEM_ROTATE 0x800000
-#define MEM_DIFFERENT_IMAGE_BASE_OK 0x800000
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define MEM_RESET_UNDO 0x1000000
-#endif
+
+#define MEM_COMMIT 0x00001000
+#define MEM_RESERVE 0x00002000
+#define MEM_DECOMMIT 0x00004000
+#define MEM_RELEASE 0x00008000
+#define MEM_FREE 0x00010000
+#define MEM_PRIVATE 0x00020000
+#define MEM_MAPPED 0x00040000
+#define MEM_RESET 0x00080000
+#define MEM_TOP_DOWN 0x00100000
+#define MEM_WRITE_WATCH 0x00200000
+#define MEM_PHYSICAL 0x00400000
+#define MEM_ROTATE 0x00800000
+#define MEM_DIFFERENT_IMAGE_BASE_OK 0x00800000
+#define MEM_RESET_UNDO 0x01000000
 #define MEM_LARGE_PAGES 0x20000000
+#define MEM_DOS_LIM 0x40000000
 #define MEM_4MB_PAGES 0x80000000
 
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define SEC_FILE 0x800000
-#endif
-#define SEC_IMAGE 0x1000000
-#define SEC_PROTECTED_IMAGE 0x2000000
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define SEC_RESERVE 0x4000000
-#define SEC_COMMIT 0x8000000
-#endif
+#define SEC_BASED 0x00200000
+#define SEC_NO_CHANGE 0x00400000
+#define SEC_FILE 0x00800000
+#define SEC_IMAGE 0x01000000
+#define SEC_PROTECTED_IMAGE 0x02000000
+#define SEC_RESERVE 0x04000000
+#define SEC_COMMIT 0x08000000
 #define SEC_NOCACHE 0x10000000
+#define SEC_GLOBAL 0x20000000
 #define SEC_WRITECOMBINE 0x40000000
 #define SEC_LARGE_PAGES 0x80000000
 #define SEC_IMAGE_NO_EXECUTE (SEC_IMAGE | SEC_NOCACHE)
+#if (PHNT_MODE == PHNT_MODE_KERNEL)
 #define MEM_IMAGE SEC_IMAGE
-
 #endif
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
@@ -480,7 +475,13 @@ typedef struct _SECTION_INTERNAL_IMAGE_INFORMATION
         {
             ULONG ImageExportSuppressionEnabled : 1;
             ULONG ImageCetShadowStacksReady : 1; // 20H1
-            ULONG Reserved : 30;
+            ULONG ImageXfgEnabled : 1; // 20H2
+            ULONG ImageCetShadowStacksStrictMode : 1;
+            ULONG ImageCetSetContextIpValidationRelaxedMode : 1;
+            ULONG ImageCetDynamicApisAllowInProc : 1;
+            ULONG ImageCetDowngradeReserved1 : 1;
+            ULONG ImageCetDowngradeReserved2 : 1;
+            ULONG Reserved : 24;
         };
     };
 } SECTION_INTERNAL_IMAGE_INFORMATION, *PSECTION_INTERNAL_IMAGE_INFORMATION;
@@ -492,10 +493,6 @@ typedef enum _SECTION_INHERIT
     ViewUnmap = 2
 } SECTION_INHERIT;
 #endif
-
-#define SEC_BASED 0x200000
-#define SEC_NO_CHANGE 0x400000
-#define SEC_GLOBAL 0x20000000
 
 #define MEM_EXECUTE_OPTION_DISABLE 0x1
 #define MEM_EXECUTE_OPTION_ENABLE 0x2
@@ -520,6 +517,21 @@ NtAllocateVirtualMemory(
     _In_ ULONG AllocationType,
     _In_ ULONG Protect
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtAllocateVirtualMemoryEx(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ _At_(*BaseAddress, _Readable_bytes_(*RegionSize) _Writable_bytes_(*RegionSize) _Post_readable_byte_size_(*RegionSize)) PVOID *BaseAddress,
+    _Inout_ PSIZE_T RegionSize,
+    _In_ ULONG AllocationType,
+    _In_ ULONG PageProtection,
+    _Inout_updates_opt_(ExtendedParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -574,6 +586,16 @@ NtQueryVirtualMemory(
     _Out_writes_bytes_(MemoryInformationLength) PVOID MemoryInformation,
     _In_ SIZE_T MemoryInformationLength,
     _Out_opt_ PSIZE_T ReturnLength
+    );
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtFlushVirtualMemory(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ PVOID *BaseAddress,
+    _Inout_ PSIZE_T RegionSize,
+    _Out_ struct _IO_STATUS_BLOCK* IoStatus
     );
 
 #endif
@@ -711,6 +733,23 @@ NtMapViewOfSection(
     _In_ ULONG AllocationType,
     _In_ ULONG Win32Protect
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtMapViewOfSectionEx(
+    _In_ HANDLE SectionHandle,
+    _In_ HANDLE ProcessHandle,
+    _Inout_ _At_(*BaseAddress, _Readable_bytes_(*ViewSize) _Writable_bytes_(*ViewSize) _Post_readable_byte_size_(*ViewSize)) PVOID *BaseAddress,
+    _Inout_opt_ PLARGE_INTEGER SectionOffset,
+    _Inout_ PSIZE_T ViewSize,
+    _In_ ULONG AllocationType,
+    _In_ ULONG Win32Protect,
+    _Inout_updates_opt_(ParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -933,6 +972,19 @@ NtAllocateUserPhysicalPages(
     _Out_writes_(*NumberOfPages) PULONG_PTR UserPfnArray
     );
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtAllocateUserPhysicalPagesEx(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ PULONG_PTR NumberOfPages,
+    _Out_writes_(*NumberOfPages) PULONG_PTR UserPfnArray,
+    _Inout_updates_opt_(ParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
+
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -1000,7 +1052,7 @@ NtFlushWriteBuffer(
 
 // Enclave support
 
-NTSYSAPI
+NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtCreateEnclave(
@@ -1015,7 +1067,7 @@ NtCreateEnclave(
     _Out_opt_ PULONG EnclaveError
     );
 
-NTSYSAPI
+NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtLoadEnclaveData(
@@ -1030,7 +1082,7 @@ NtLoadEnclaveData(
     _Out_opt_ PULONG EnclaveError
     );
 
-NTSYSAPI
+NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtInitializeEnclave(
@@ -1042,7 +1094,7 @@ NtInitializeEnclave(
     );
 
 // rev
-NTSYSAPI
+NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtTerminateEnclave(
@@ -1052,7 +1104,7 @@ NtTerminateEnclave(
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
 // rev
-NTSYSAPI
+NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtCallEnclave(

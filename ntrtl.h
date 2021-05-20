@@ -2571,6 +2571,7 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS
 
     ULONG_PTR EnvironmentSize;
     ULONG_PTR EnvironmentVersion;
+
     PVOID PackageDependencyData;
     ULONG ProcessGroupId;
     ULONG LoaderThreads;
@@ -2994,8 +2995,8 @@ NTSYSAPI
 VOID
 NTAPI
 RtlSetExtendedFeaturesMask(
-    _Out_ PCONTEXT_EX ContextEx,
-    _Out_ ULONG64 FeatureMask
+    _In_ PCONTEXT_EX ContextEx,
+    _In_ ULONG64 FeatureMask
     );
 
 #ifdef _WIN64
@@ -3206,7 +3207,7 @@ RtlImageRvaToVa(
     _In_ PIMAGE_NT_HEADERS NtHeaders,
     _In_ PVOID BaseOfImage,
     _In_ ULONG Rva,
-    _Inout_opt_ PIMAGE_SECTION_HEADER *LastRvaSection
+    _Out_opt_ PIMAGE_SECTION_HEADER *LastRvaSection
     );
 
 #if (PHNT_VERSION >= PHNT_THRESHOLD)
@@ -4765,6 +4766,19 @@ RtlFormatMessageEx(
     _Out_opt_ PPARSE_MESSAGE_CONTEXT ParseContext
     );
 
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetFileMUIPath(
+    _In_ ULONG Flags,
+    _In_ PCWSTR FilePath,
+    _Inout_opt_ PWSTR Language,
+    _Inout_ PULONG LanguageLength,
+    _Out_opt_ PWSTR FileMUIPath,
+    _Inout_ PULONG FileMUIPathLength,
+    _Inout_ PULONGLONG Enumerator
+    );
+
 // Errors
 
 NTSYSAPI
@@ -5203,6 +5217,15 @@ RtlSecondsSince1970ToTime(
     _In_ ULONG ElapsedSeconds,
     _Out_ PLARGE_INTEGER Time
     );
+
+#if (PHNT_VERSION >= PHNT_WIN8)
+NTSYSAPI
+ULONGLONG
+NTAPI
+RtlGetSystemTimePrecise(
+    VOID
+    );
+#endif
 
 // Time zones
 
@@ -6532,6 +6555,32 @@ RtlAddMandatoryAce(
     );
 #endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlAddResourceAttributeAce(
+    _Inout_ PACL Acl,
+    _In_ ULONG AceRevision,
+    _In_ ULONG AceFlags,
+    _In_ ULONG AccessMask,
+    _In_ PSID Sid,
+    _In_ PCLAIM_SECURITY_ATTRIBUTES_INFORMATION AttributeInfo,
+    _Out_ PULONG ReturnLength
+    );
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlAddScopedPolicyIDAce(
+    _Inout_ PACL Acl,
+    _In_ ULONG AceRevision,
+    _In_ ULONG AceFlags,
+    _In_ ULONG AccessMask,
+    _In_ PSID Sid
+    );
+#endif
+
 // Named pipes
 
 NTSYSAPI
@@ -6768,7 +6817,7 @@ RtlQueryValidationRunlevel(
 // begin_private
 
 NTSYSAPI
-PVOID
+HANDLE
 NTAPI
 RtlCreateBoundaryDescriptor(
     _In_ PUNICODE_STRING Name,
@@ -6779,14 +6828,14 @@ NTSYSAPI
 VOID
 NTAPI
 RtlDeleteBoundaryDescriptor(
-    _In_ PVOID BoundaryDescriptor
+    _In_ HANDLE BoundaryDescriptor
     );
 
 NTSYSAPI
 NTSTATUS
 NTAPI
 RtlAddSIDToBoundaryDescriptor(
-    _Inout_ PVOID *BoundaryDescriptor,
+    _Inout_ PHANDLE BoundaryDescriptor,
     _In_ PSID RequiredSid
     );
 
@@ -6796,7 +6845,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlAddIntegrityLabelToBoundaryDescriptor(
-    _Inout_ PVOID *BoundaryDescriptor,
+    _Inout_ PHANDLE BoundaryDescriptor,
     _In_ PSID IntegrityLabel
     );
 #endif
@@ -8194,17 +8243,6 @@ NTAPI
 RtlSetPortableOperatingSystem(
     _In_ BOOLEAN IsPortable
     );
-
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
-
-NTSYSAPI
-OS_DEPLOYEMENT_STATE_VALUES
-NTAPI
-RtlOsDeploymentState(
-    _Reserved_ _In_ ULONG Flags
-    );
-
-#endif
 
 #if (PHNT_VERSION >= PHNT_VISTA)
 
