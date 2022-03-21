@@ -37,17 +37,17 @@ typedef enum _KTHREAD_STATE
 // private
 typedef enum _KHETERO_CPU_POLICY
 {
-    KHeteroCpuPolicyAll,
-    KHeteroCpuPolicyLarge,
-    KHeteroCpuPolicyLargeOrIdle,
-    KHeteroCpuPolicySmall,
-    KHeteroCpuPolicySmallOrIdle,
-    KHeteroCpuPolicyDynamic,
-    KHeteroCpuPolicyStaticMax,
-    KHeteroCpuPolicyBiasedSmall,
-    KHeteroCpuPolicyBiasedLarge,
-    KHeteroCpuPolicyDefault,
-    KHeteroCpuPolicyMax
+    KHeteroCpuPolicyAll = 0,
+    KHeteroCpuPolicyLarge = 1,
+    KHeteroCpuPolicyLargeOrIdle = 2,
+    KHeteroCpuPolicySmall = 3,
+    KHeteroCpuPolicySmallOrIdle = 4,
+    KHeteroCpuPolicyDynamic = 5,
+    KHeteroCpuPolicyStaticMax = 5, // valid
+    KHeteroCpuPolicyBiasedSmall = 6,
+    KHeteroCpuPolicyBiasedLarge = 7,
+    KHeteroCpuPolicyDefault = 8,
+    KHeteroCpuPolicyMax = 9
 } KHETERO_CPU_POLICY, *PKHETERO_CPU_POLICY;
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
@@ -94,6 +94,8 @@ typedef enum _KWAIT_REASON
     WrAlertByThreadId,
     WrDeferredPreempt,
     WrPhysicalFault,
+    WrIoRing,
+    WrMdlCache,
     MaximumWaitReason
 } KWAIT_REASON, *PKWAIT_REASON;
 

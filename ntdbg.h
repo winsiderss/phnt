@@ -213,7 +213,7 @@ typedef struct _DBGUI_WAIT_STATE_CHANGE
 typedef enum _DEBUGOBJECTINFOCLASS
 {
     DebugObjectUnusedInformation,
-    DebugObjectKillProcessOnExitInformation,
+    DebugObjectKillProcessOnExitInformation, // s: ULONG
     MaxDebugObjectInfoClass
 } DEBUGOBJECTINFOCLASS, *PDEBUGOBJECTINFOCLASS;
 
@@ -225,7 +225,7 @@ NTAPI
 NtCreateDebugObject(
     _Out_ PHANDLE DebugObjectHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ ULONG Flags
     );
 
@@ -346,6 +346,14 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 DbgUiConvertStateChangeStructure(
+    _In_ PDBGUI_WAIT_STATE_CHANGE StateChange,
+    _Out_ LPDEBUG_EVENT DebugEvent
+    );
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+DbgUiConvertStateChangeStructureEx(
     _In_ PDBGUI_WAIT_STATE_CHANGE StateChange,
     _Out_ LPDEBUG_EVENT DebugEvent
     );

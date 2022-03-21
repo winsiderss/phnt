@@ -131,6 +131,19 @@ SamConnect(
 _Check_return_
 NTSTATUS
 NTAPI
+SamConnectWithCreds(
+    _In_ PUNICODE_STRING ServerName,
+    _Out_ PSAM_HANDLE ServerHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_ struct _RPC_AUTH_IDENTITY_HANDLE* Creds,
+    _In_ PWCHAR Spn,
+    _Out_ BOOL* pfDstIsW2K
+    );
+
+_Check_return_
+NTSTATUS
+NTAPI
 SamShutdownSamServer(
     _In_ SAM_HANDLE ServerHandle
     );
@@ -186,19 +199,19 @@ SamShutdownSamServer(
 
 typedef enum _DOMAIN_INFORMATION_CLASS
 {
-    DomainPasswordInformation = 1,
-    DomainGeneralInformation,
-    DomainLogoffInformation,
-    DomainOemInformation,
-    DomainNameInformation,
-    DomainReplicationInformation,
-    DomainServerRoleInformation,
-    DomainModifiedInformation,
-    DomainStateInformation,
-    DomainUasInformation,
-    DomainGeneralInformation2,
-    DomainLockoutInformation,
-    DomainModifiedInformation2
+    DomainPasswordInformation = 1, // q; s: DOMAIN_PASSWORD_INFORMATION
+    DomainGeneralInformation, // q: DOMAIN_GENERAL_INFORMATION
+    DomainLogoffInformation, // q; s: DOMAIN_LOGOFF_INFORMATION
+    DomainOemInformation, // q; s: DOMAIN_OEM_INFORMATION
+    DomainNameInformation, // q: DOMAIN_NAME_INFORMATION
+    DomainReplicationInformation, // q; s: DOMAIN_REPLICATION_INFORMATION
+    DomainServerRoleInformation, // q; s: DOMAIN_SERVER_ROLE_INFORMATION
+    DomainModifiedInformation, // q: DOMAIN_MODIFIED_INFORMATION
+    DomainStateInformation, // q; s: DOMAIN_STATE_INFORMATION
+    DomainUasInformation, // q; s: DOMAIN_UAS_INFORMATION
+    DomainGeneralInformation2, // q: DOMAIN_GENERAL_INFORMATION2
+    DomainLockoutInformation, // q; s: DOMAIN_LOCKOUT_INFORMATION
+    DomainModifiedInformation2 // q: DOMAIN_MODIFIED_INFORMATION2
 } DOMAIN_INFORMATION_CLASS;
 
 typedef enum _DOMAIN_SERVER_ENABLE_STATE
@@ -329,11 +342,11 @@ typedef struct _DOMAIN_LOCKOUT_INFORMATION
 
 typedef enum _DOMAIN_DISPLAY_INFORMATION
 {
-    DomainDisplayUser = 1,
-    DomainDisplayMachine,
-    DomainDisplayGroup,
-    DomainDisplayOemUser,
-    DomainDisplayOemGroup,
+    DomainDisplayUser = 1, // DOMAIN_DISPLAY_USER
+    DomainDisplayMachine, // DOMAIN_DISPLAY_MACHINE
+    DomainDisplayGroup, // DOMAIN_DISPLAY_GROUP
+    DomainDisplayOemUser, // DOMAIN_DISPLAY_OEM_USER
+    DomainDisplayOemGroup, // DOMAIN_DISPLAY_OEM_GROUP
     DomainDisplayServer
 } DOMAIN_DISPLAY_INFORMATION, *PDOMAIN_DISPLAY_INFORMATION;
 
@@ -467,6 +480,17 @@ SamLookupNamesInDomain(
 _Check_return_
 NTSTATUS
 NTAPI
+SamLookupNamesInDomain2(
+    _In_ SAM_HANDLE DomainHandle,
+    _In_ ULONG Count,
+    _In_reads_(Count) PUNICODE_STRING Names,
+    _Out_ _Deref_post_count_(Count) PSID* Sids,
+    _Out_ _Deref_post_count_(Count) PSID_NAME_USE* Use
+    );
+
+_Check_return_
+NTSTATUS
+NTAPI
 SamLookupIdsInDomain(
     _In_ SAM_HANDLE DomainHandle,
     _In_ ULONG Count,
@@ -530,10 +554,10 @@ typedef struct _GROUP_MEMBERSHIP
 
 typedef enum _GROUP_INFORMATION_CLASS
 {
-    GroupGeneralInformation = 1,
-    GroupNameInformation,
-    GroupAttributeInformation,
-    GroupAdminCommentInformation,
+    GroupGeneralInformation = 1, // q: GROUP_GENERAL_INFORMATION
+    GroupNameInformation, // q; s: GROUP_NAME_INFORMATION
+    GroupAttributeInformation, // q; s: GROUP_ATTRIBUTE_INFORMATION
+    GroupAdminCommentInformation, // q; s: GROUP_ADM_COMMENT_INFORMATION
     GroupReplicationInformation
 } GROUP_INFORMATION_CLASS;
 
@@ -685,9 +709,9 @@ SamSetMemberAttributesOfGroup(
 
 typedef enum _ALIAS_INFORMATION_CLASS
 {
-    AliasGeneralInformation = 1,
-    AliasNameInformation,
-    AliasAdminCommentInformation,
+    AliasGeneralInformation = 1, // q: ALIAS_GENERAL_INFORMATION
+    AliasNameInformation, // q; s: ALIAS_NAME_INFORMATION
+    AliasAdminCommentInformation, // q; s: ALIAS_ADM_COMMENT_INFORMATION
     AliasReplicationInformation,
     AliasExtendedInformation,
 } ALIAS_INFORMATION_CLASS;
@@ -912,7 +936,7 @@ SamGetAliasMembership(
 #define USER_TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION (0x00040000)
 #define USER_NO_AUTH_DATA_REQUIRED (0x00080000)
 #define USER_PARTIAL_SECRETS_ACCOUNT (0x00100000)
-#define USER_USE_AES_KEYS (0x00200000) // not used
+#define USER_USE_AES_KEYS (0x00200000)
 
 #define NEXT_FREE_ACCOUNT_CONTROL_BIT (USER_USE_AES_KEYS << 1)
 
@@ -968,35 +992,38 @@ typedef struct _SR_SECURITY_DESCRIPTOR
 
 typedef enum _USER_INFORMATION_CLASS
 {
-    UserGeneralInformation = 1, // USER_GENERAL_INFORMATION
-    UserPreferencesInformation, // USER_PREFERENCES_INFORMATION
-    UserLogonInformation, // USER_LOGON_INFORMATION
-    UserLogonHoursInformation, // USER_LOGON_HOURS_INFORMATION
-    UserAccountInformation, // USER_ACCOUNT_INFORMATION
-    UserNameInformation, // USER_NAME_INFORMATION
-    UserAccountNameInformation, // USER_ACCOUNT_NAME_INFORMATION
-    UserFullNameInformation, // USER_FULL_NAME_INFORMATION
-    UserPrimaryGroupInformation, // USER_PRIMARY_GROUP_INFORMATION
-    UserHomeInformation, // USER_HOME_INFORMATION
-    UserScriptInformation, // USER_SCRIPT_INFORMATION
-    UserProfileInformation, // USER_PROFILE_INFORMATION
-    UserAdminCommentInformation, // USER_ADMIN_COMMENT_INFORMATION
-    UserWorkStationsInformation, // USER_WORKSTATIONS_INFORMATION
-    UserSetPasswordInformation, // USER_SET_PASSWORD_INFORMATION
-    UserControlInformation, // USER_CONTROL_INFORMATION
-    UserExpiresInformation, // USER_EXPIRES_INFORMATION
-    UserInternal1Information,
-    UserInternal2Information,
-    UserParametersInformation, // USER_PARAMETERS_INFORMATION
+    UserGeneralInformation = 1, // q: USER_GENERAL_INFORMATION
+    UserPreferencesInformation, // q; s: USER_PREFERENCES_INFORMATION
+    UserLogonInformation, // q: USER_LOGON_INFORMATION
+    UserLogonHoursInformation, // q; s: USER_LOGON_HOURS_INFORMATION
+    UserAccountInformation, // q: USER_ACCOUNT_INFORMATION
+    UserNameInformation, // q; s: USER_NAME_INFORMATION
+    UserAccountNameInformation, // q; s: USER_ACCOUNT_NAME_INFORMATION
+    UserFullNameInformation, // q; s: USER_FULL_NAME_INFORMATION
+    UserPrimaryGroupInformation, // q; s: USER_PRIMARY_GROUP_INFORMATION
+    UserHomeInformation, // q; s: USER_HOME_INFORMATION // 10
+    UserScriptInformation, // q; s: USER_SCRIPT_INFORMATION
+    UserProfileInformation, // q; s: USER_PROFILE_INFORMATION
+    UserAdminCommentInformation, // q; s: USER_ADMIN_COMMENT_INFORMATION
+    UserWorkStationsInformation, // q; s: USER_WORKSTATIONS_INFORMATION
+    UserSetPasswordInformation, // s: USER_SET_PASSWORD_INFORMATION
+    UserControlInformation, // q; s: USER_CONTROL_INFORMATION
+    UserExpiresInformation, // q; s: USER_EXPIRES_INFORMATION
+    UserInternal1Information, // USER_INTERNAL1_INFORMATION
+    UserInternal2Information, // USER_INTERNAL2_INFORMATION
+    UserParametersInformation, // q; s: USER_PARAMETERS_INFORMATION // 20
     UserAllInformation, // USER_ALL_INFORMATION
-    UserInternal3Information,
-    UserInternal4Information,
-    UserInternal5Information,
-    UserInternal4InformationNew,
-    UserInternal5InformationNew,
-    UserInternal6Information,
+    UserInternal3Information, // USER_INTERNAL3_INFORMATION
+    UserInternal4Information, // USER_INTERNAL4_INFORMATION
+    UserInternal5Information, // USER_INTERNAL5_INFORMATION
+    UserInternal4InformationNew, // USER_INTERNAL4_INFORMATION_NEW
+    UserInternal5InformationNew, // USER_INTERNAL5_INFORMATION_NEW
+    UserInternal6Information, // USER_INTERNAL6_INFORMATION
     UserExtendedInformation, // USER_EXTENDED_INFORMATION
-    UserLogonUIInformation // USER_LOGON_UI_INFORMATION
+    UserLogonUIInformation, // USER_LOGON_UI_INFORMATION
+    UserUnknownTodoInformation,
+    UserInternal7Information, // USER_INTERNAL7_INFORMATION
+    UserInternal8Information, // USER_INTERNAL8_INFORMATION
 } USER_INFORMATION_CLASS, *PUSER_INFORMATION_CLASS;
 
 typedef struct _USER_GENERAL_INFORMATION
@@ -1131,6 +1158,41 @@ typedef struct _USER_EXPIRES_INFORMATION
 {
     LARGE_INTEGER AccountExpires;
 } USER_EXPIRES_INFORMATION, *PUSER_EXPIRES_INFORMATION;
+
+#define CYPHER_BLOCK_LENGTH 8
+
+typedef struct _CYPHER_BLOCK
+{
+    CHAR data[CYPHER_BLOCK_LENGTH];
+} CYPHER_BLOCK, *PCYPHER_BLOCK;
+
+typedef struct _ENCRYPTED_NT_OWF_PASSWORD
+{
+    CYPHER_BLOCK data[2];
+} ENCRYPTED_NT_OWF_PASSWORD, *PENCRYPTED_NT_OWF_PASSWORD;
+
+typedef struct _ENCRYPTED_LM_OWF_PASSWORD
+{
+    CYPHER_BLOCK data[2];
+} ENCRYPTED_LM_OWF_PASSWORD, *PENCRYPTED_LM_OWF_PASSWORD;
+
+typedef struct _USER_INTERNAL1_INFORMATION
+{
+    ENCRYPTED_NT_OWF_PASSWORD EncryptedNtOwfPassword;
+    ENCRYPTED_LM_OWF_PASSWORD EncryptedLmOwfPassword;
+    BOOLEAN NtPasswordPresent;
+    BOOLEAN LmPasswordPresent;
+    BOOLEAN PasswordExpired;
+} USER_INTERNAL1_INFORMATION, *PUSER_INTERNAL1_INFORMATION;
+
+typedef struct _USER_INTERNAL2_INFORMATION
+{
+    ULONG StatisticsToApply;
+    LARGE_INTEGER LastLogon;
+    LARGE_INTEGER LastLogoff;
+    USHORT BadPasswordCount;
+    USHORT LogonCount;
+} USER_INTERNAL2_INFORMATION, *PUSER_INTERNAL2_INFORMATION;
 
 typedef struct _USER_PARAMETERS_INFORMATION
 {
@@ -1316,6 +1378,68 @@ typedef struct _USER_ALL_INFORMATION
 } USER_ALL_INFORMATION, *PUSER_ALL_INFORMATION;
 #include <poppack.h>
 
+#include <pshpack4.h>
+typedef struct _USER_INTERNAL3_INFORMATION
+{
+    USER_ALL_INFORMATION I1;
+    LARGE_INTEGER LastBadPasswordTime;
+} USER_INTERNAL3_INFORMATION, *PUSER_INTERNAL3_INFORMATION;
+#include <poppack.h>
+
+typedef struct _ENCRYPTED_USER_PASSWORD
+{
+    UCHAR Buffer[(SAM_MAX_PASSWORD_LENGTH * 2) + 4];
+} ENCRYPTED_USER_PASSWORD, *PENCRYPTED_USER_PASSWORD;
+
+typedef struct _USER_INTERNAL4_INFORMATION
+{
+    USER_ALL_INFORMATION I1;
+    ENCRYPTED_USER_PASSWORD UserPassword;
+} USER_INTERNAL4_INFORMATION, *PUSER_INTERNAL4_INFORMATION;
+
+typedef struct _USER_INTERNAL5_INFORMATION
+{
+    ENCRYPTED_USER_PASSWORD UserPassword;
+    BOOLEAN PasswordExpired;
+} USER_INTERNAL5_INFORMATION, *PUSER_INTERNAL5_INFORMATION;
+
+typedef struct _ENCRYPTED_USER_PASSWORD_NEW
+{
+    UCHAR Buffer[(SAM_MAX_PASSWORD_LENGTH * 2) + 4 + SAM_PASSWORD_ENCRYPTION_SALT_LEN];
+} ENCRYPTED_USER_PASSWORD_NEW, *PENCRYPTED_USER_PASSWORD_NEW;
+
+typedef struct _USER_INTERNAL4_INFORMATION_NEW
+{
+    USER_ALL_INFORMATION I1;
+    ENCRYPTED_USER_PASSWORD_NEW UserPassword;
+} USER_INTERNAL4_INFORMATION_NEW, *PUSER_INTERNAL4_INFORMATION_NEW;
+
+typedef struct _USER_INTERNAL5_INFORMATION_NEW
+{
+    ENCRYPTED_USER_PASSWORD_NEW UserPassword;
+    BOOLEAN PasswordExpired;
+} USER_INTERNAL5_INFORMATION_NEW, *PUSER_INTERNAL5_INFORMATION_NEW;
+
+typedef struct _USER_ALLOWED_TO_DELEGATE_TO_LIST
+{
+    ULONG Size;
+    ULONG NumSPNs;
+    UNICODE_STRING SPNList[ANYSIZE_ARRAY];
+} USER_ALLOWED_TO_DELEGATE_TO_LIST, *PUSER_ALLOWED_TO_DELEGATE_TO_LIST; 
+
+#define USER_EXTENDED_FIELD_UPN 0x00000001L
+#define USER_EXTENDED_FIELD_A2D2 0x00000002L
+
+typedef struct _USER_INTERNAL6_INFORMATION
+{
+    USER_ALL_INFORMATION I1;
+    LARGE_INTEGER LastBadPasswordTime;
+    ULONG ExtendedFields;
+    BOOLEAN UPNDefaulted;
+    UNICODE_STRING UPN;
+    PUSER_ALLOWED_TO_DELEGATE_TO_LIST A2D2List;
+} USER_INTERNAL6_INFORMATION, *PUSER_INTERNAL6_INFORMATION;
+
 typedef SAM_BYTE_ARRAY_32K SAM_USER_TILE, *PSAM_USER_TILE;
 
 // 0xff000fff is reserved for internal callers and implementation.
@@ -1340,6 +1464,27 @@ typedef struct _USER_LOGON_UI_INFORMATION
     BOOLEAN PasswordIsBlank;
     BOOLEAN AccountIsDisabled;
 } USER_LOGON_UI_INFORMATION, *PUSER_LOGON_UI_INFORMATION;
+
+typedef struct _ENCRYPTED_PASSWORD_AES
+{
+    UCHAR AuthData[64];
+    UCHAR Salt[SAM_PASSWORD_ENCRYPTION_SALT_LEN];
+    ULONG cbCipher;
+    PUCHAR Cipher;
+    ULONGLONG PBKDF2Iterations;
+} ENCRYPTED_PASSWORD_AES, *PENCRYPTED_PASSWORD_AES;
+
+typedef struct _USER_INTERNAL7_INFORMATION
+{
+    ENCRYPTED_PASSWORD_AES UserPassword;
+    BOOLEAN PasswordExpired;
+} USER_INTERNAL7_INFORMATION, *PUSER_INTERNAL7_INFORMATION;
+
+typedef struct _USER_INTERNAL8_INFORMATION
+{
+    USER_ALL_INFORMATION I1;
+    ENCRYPTED_PASSWORD_AES UserPassword;
+} USER_INTERNAL8_INFORMATION, *PUSER_INTERNAL8_INFORMATION;
 
 // SamChangePasswordUser3 types
 
@@ -1493,7 +1638,7 @@ SamQueryDisplayInformation(
     _In_ ULONG Index,
     _In_ ULONG EntryCount,
     _In_ ULONG PreferredMaximumLength,
-    _In_ PULONG TotalAvailable,
+    _Out_ PULONG TotalAvailable,
     _Out_ PULONG TotalReturned,
     _Out_ PULONG ReturnedEntryCount,
     _Outptr_ PVOID *SortedBuffer
