@@ -1323,7 +1323,7 @@ RtlFreeAnsiString(
     _Inout_ _At_(AnsiString->Buffer, _Frees_ptr_opt_) PANSI_STRING AnsiString
     );
 
-#if (PHNT_VERSION >= PHNT_19H2)
+#if (PHNT_VERSION >= PHNT_20H1)
 NTSYSAPI
 VOID
 NTAPI
@@ -1603,7 +1603,7 @@ RtlPrefixUnicodeString(
     _In_ BOOLEAN CaseInSensitive
     );
 
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
+#if (PHNT_MODE == PHNT_MODE_KERNEL && PHNT_VERSION >= PHNT_THRESHOLD)
 _Must_inspect_result_
 NTSYSAPI
 BOOLEAN
@@ -1700,7 +1700,7 @@ RtlUnicodeStringToAnsiString(
     _In_ BOOLEAN AllocateDestinationString
     );
 
-#if (PHNT_VERSION >= PHNT_19H2)
+#if (PHNT_VERSION >= PHNT_20H1)
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -2049,12 +2049,14 @@ RtlIsNameInUnUpcasedExpression(
     );
 #endif
 
+#if (PHNT_VERSION >= PHNT_19H1)
 NTSYSAPI
 BOOLEAN
 NTAPI
 RtlDoesNameContainWildCards(
     _In_ PUNICODE_STRING Expression
     );
+#endif
 
 NTSYSAPI
 BOOLEAN
@@ -2833,6 +2835,12 @@ RtlUpdateClonedSRWLock(
     _In_ LOGICAL Shared // TRUE to set to shared acquire
     );
 
+// rev
+#define RTL_PROCESS_REFLECTION_FLAGS_INHERIT_HANDLES 0x2
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_SUSPEND 0x4
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_SYNCHRONIZE 0x8
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_CLOSE_EVENT 0x10
+
 // private
 typedef struct _RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION
 {
@@ -2848,7 +2856,7 @@ NTSTATUS
 NTAPI
 RtlCreateProcessReflection(
     _In_ HANDLE ProcessHandle,
-    _In_ ULONG Flags, // RTL_CLONE_PROCESS_FLAGS
+    _In_ ULONG Flags, // RTL_PROCESS_REFLECTION_FLAGS_*
     _In_opt_ PVOID StartRoutine,
     _In_opt_ PVOID StartContext,
     _In_opt_ HANDLE EventHandle,
@@ -3237,6 +3245,32 @@ RtlGetFunctionTableListHead(
 
 #endif
 
+// Activation Contexts
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetActiveActivationContext(
+    _Out_ HANDLE ActCtx
+    );
+
+// rev
+NTSYSAPI
+VOID
+NTAPI
+RtlAddRefActivationContext(
+    _In_ HANDLE ActCtx
+    );
+
+// rev
+NTSYSAPI
+VOID
+NTAPI
+RtlReleaseActivationContext(
+    _In_ HANDLE ActCtx
+    );
+
 // Images
 
 NTSYSAPI
@@ -3305,7 +3339,7 @@ RtlImageRvaToVa(
     _Out_opt_ PIMAGE_SECTION_HEADER *LastRvaSection
     );
 
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
+#if (PHNT_VERSION >= PHNT_REDSTONE)
 
 // rev
 NTSYSAPI
@@ -3315,10 +3349,6 @@ RtlFindExportedRoutineByName(
     _In_ PVOID BaseOfImage,
     _In_ PCSTR RoutineName
     );
-
-#endif
-
-#if (PHNT_VERSION >= PHNT_REDSTONE)
 
 // rev
 NTSYSAPI
@@ -3880,7 +3910,7 @@ RtlReleasePath(
 
 #endif
 
-#if (PHNT_VERSION >= PHNT_20H1)
+#if (PHNT_VERSION >= PHNT_REDSTONE)
 // rev
 NTSYSAPI
 ULONG
@@ -4897,6 +4927,21 @@ RtlGetFileMUIPath(
     _Inout_ PULONGLONG Enumerator
     );
 
+// private
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlLoadString(
+    _In_ PVOID DllHandle,
+    _In_ ULONG StringId,
+    _In_opt_ PCWSTR StringLanguage,
+    _In_ ULONG Flags,
+    _Out_ PCWSTR *ReturnString,
+    _Out_opt_ PUSHORT ReturnStringLen,
+    _Out_writes_(ReturnLanguageLen) PWSTR ReturnLanguageName,
+    _Inout_opt_ PULONG ReturnLanguageLen
+    );
+
 // Errors
 
 NTSYSAPI
@@ -5313,7 +5358,7 @@ RtlGetSystemTimePrecise(
     );
 #endif
 
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
+#if (PHNT_VERSION >= PHNT_21H2)
 NTSYSAPI
 KSYSTEM_TIME
 NTAPI
@@ -5322,14 +5367,18 @@ RtlGetSystemTimeAndBias(
     _Out_opt_ PLARGE_INTEGER TimeZoneBiasEffectiveStart,
     _Out_opt_ PLARGE_INTEGER TimeZoneBiasEffectiveEnd
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 NTSYSAPI
 LARGE_INTEGER
 NTAPI
 RtlGetInterruptTimePrecise(
     _Out_ PLARGE_INTEGER PerformanceCounter
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5974,7 +6023,7 @@ RtlAllocateAndInitializeSid(
     _Outptr_ PSID *Sid
     );
 
-#if (PHNT_VERSION >= PHNT_WIN8)
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 _Must_inspect_result_
 NTSYSAPI
 NTSTATUS
@@ -6199,7 +6248,7 @@ RtlIsElevatedRid(
     );
 #endif
 
-#if (PHNT_VERSION >= PHNT_REDSTONE2)
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -7509,7 +7558,7 @@ RtlGetCurrentProcessorNumber(
     VOID
     );
 
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
+#if (PHNT_VERSION >= PHNT_WIN7)
 
 // rev
 NTSYSAPI
@@ -7978,6 +8027,7 @@ RtlGetConsoleSessionForegroundProcessId(
 
 // Appcontainer
 
+#if (PHNT_VERSION >= PHNT_REDSTONE2)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -7987,7 +8037,9 @@ RtlGetTokenNamedObjectPath(
     _In_opt_ PSID Sid, 
     _Out_ PUNICODE_STRING ObjectPath // RtlFreeUnicodeString
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -7998,7 +8050,9 @@ RtlGetAppContainerNamedObjectPath(
     _In_ BOOLEAN RelativePath,
     _Out_ PUNICODE_STRING ObjectPath // RtlFreeUnicodeString
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8007,7 +8061,9 @@ RtlGetAppContainerParent(
     _In_ PSID AppContainerSid, 
     _Out_ PSID* AppContainerSidParent // RtlFreeSid
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8016,7 +8072,9 @@ RtlCheckSandboxedToken(
     _In_opt_ HANDLE TokenHandle,
     _Out_ PBOOLEAN IsSandboxed
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8026,7 +8084,9 @@ RtlCheckTokenCapability(
     _In_ PSID CapabilitySidToCheck,
     _Out_ PBOOLEAN HasCapability
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8036,7 +8096,9 @@ RtlCapabilityCheck(
     _In_ PUNICODE_STRING CapabilityName,
     _Out_ PBOOLEAN HasCapability
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8057,7 +8119,9 @@ RtlCheckTokenMembershipEx(
     _In_ ULONG Flags, // CTMF_VALID_FLAGS
     _Out_ PBOOLEAN IsMember
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_REDSTONE4)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8066,7 +8130,9 @@ RtlQueryTokenHostIdAsUlong64(
     _In_ HANDLE TokenHandle,
     _Out_ PULONG64 HostId // (WIN://PKGHOSTID)
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 // rev
 NTSYSAPI
 BOOLEAN
@@ -8075,7 +8141,9 @@ RtlIsParentOfChildAppContainer(
     _In_ PSID ParentAppContainerSid,
     _In_ PSID ChildAppContainerSid
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN11)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8083,7 +8151,9 @@ NTAPI
 RtlIsApiSetImplemented(
     _In_ PCSTR Namespace
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 BOOLEAN
@@ -8099,7 +8169,9 @@ NTAPI
 RtlIsPackageSid(
     _In_ PSID Sid
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 // rev
 NTSYSAPI
 BOOLEAN
@@ -8107,13 +8179,16 @@ NTAPI
 RtlIsValidProcessTrustLabelSid(
     _In_ PSID Sid
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
 NTSYSAPI
 BOOLEAN
 NTAPI
 RtlIsStateSeparationEnabled(
     VOID
     );
+#endif
 
 typedef enum _APPCONTAINER_SID_TYPE
 {
@@ -8124,6 +8199,7 @@ typedef enum _APPCONTAINER_SID_TYPE
     MaxAppContainerSidType
 } APPCONTAINER_SID_TYPE, *PAPPCONTAINER_SID_TYPE;
 
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8132,6 +8208,7 @@ RtlGetAppContainerSidType(
     _In_ PSID AppContainerSid,
     _Out_ PAPPCONTAINER_SID_TYPE AppContainerSidType
     );
+#endif
 
 NTSYSAPI
 NTSTATUS
@@ -8155,6 +8232,7 @@ typedef enum _STATE_LOCATION_TYPE
     LocationTypeMaximum
 } STATE_LOCATION_TYPE;
 
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
 // private
 NTSYSAPI
 NTSTATUS
@@ -8206,8 +8284,6 @@ RtlIsPartialPlaceholderFileInfo(
     _Out_ PBOOLEAN IsPartialPlaceholder
     );
 
-#if (PHNT_VERSION >= PHNT_REDSTONE3)
-
 #undef PHCM_MAX
 #define PHCM_APPLICATION_DEFAULT ((CHAR)0)
 #define PHCM_DISGUISE_PLACEHOLDERS ((CHAR)1)
@@ -8256,6 +8332,7 @@ RtlSetProcessPlaceholderCompatibilityMode(
 
 #endif
 
+#if (PHNT_VERSION >= PHNT_REDSTONE2)
 // rev
 NTSYSAPI
 BOOLEAN
@@ -8263,7 +8340,9 @@ NTAPI
 RtlIsNonEmptyDirectoryReparsePointAllowed(
     _In_ ULONG ReparseTag
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8272,14 +8351,24 @@ RtlAppxIsFileOwnedByTrustedInstaller(
     _In_ HANDLE FileHandle, 
     _Out_ PBOOLEAN IsFileOwnedByTrustedInstaller
     );
+#endif
 
-// rev
+// Windows Internals book
+#define PSM_ACTIVATION_TOKEN_PACKAGED_APPLICATION 0x1
+#define PSM_ACTIVATION_TOKEN_SHARED_ENTITY 0x2
+#define PSM_ACTIVATION_TOKEN_FULL_TRUST 0x4
+#define PSM_ACTIVATION_TOKEN_NATIVE_SERVICE 0x8
+#define PSM_ACTIVATION_TOKEN_DEVELOPMENT_APP 0x10
+#define BREAKAWAY_INHIBITED 0x20
+
+// private
 typedef struct _PS_PKG_CLAIM
 {
-    ULONGLONG Flags;
-    ULONGLONG Origin;
+    ULONG Flags;  // PSM_ACTIVATION_TOKEN_*
+    ULONG Origin; // PackageOrigin from appmodel.h
 } PS_PKG_CLAIM, *PPS_PKG_CLAIM;
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -8293,9 +8382,11 @@ RtlQueryPackageClaims(
     _Out_opt_ PPS_PKG_CLAIM PkgClaim,
     _Out_opt_ PULONG64 AttributesPresent
     );
+#endif
 
 // Protected policies
 
+#if (PHNT_VERSION >= PHNT_WINBLUE)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8314,8 +8405,9 @@ RtlSetProtectedPolicy(
     _In_ ULONG_PTR PolicyValue,
     _Out_ PULONG_PTR OldPolicyValue
     );
+#endif
 
-#if (PHNT_VERSION >= PHNT_REDSTONE)
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
 // private
 NTSYSAPI
 BOOLEAN
@@ -8457,6 +8549,7 @@ RtlGetSetBootStatusData(
     _Out_opt_ PULONG ReturnLength
     );
 
+#if (PHNT_VERSION >= PHNT_REDSTONE)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8473,7 +8566,9 @@ NTAPI
 RtlRestoreBootStatusDefaults(
     _In_ HANDLE FileHandle
     );
+#endif
 
+#if (PHNT_VERSION >= PHNT_REDSTONE3)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8482,7 +8577,6 @@ RtlRestoreSystemBootStatusDefaults(
     VOID
     );
 
-#if (PHNT_VERSION >= PHNT_REDSTONE3)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8506,6 +8600,7 @@ RtlSetSystemBootStatus(
     );
 #endif
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -8521,6 +8616,7 @@ NTAPI
 RtlSetPortableOperatingSystem(
     _In_ BOOLEAN IsPortable
     );
+#endif
 
 #if (PHNT_VERSION >= PHNT_VISTA)
 
@@ -8565,7 +8661,7 @@ RtlFlushSecureMemoryCache(
     _In_opt_ SIZE_T MemoryLength
     );
 
-#if (PHNT_VERSION >= PHNT_REDSTONE3)
+#if (PHNT_VERSION >= PHNT_20H1)
 
 // Feature configuration
 

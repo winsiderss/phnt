@@ -61,7 +61,7 @@ typedef PCSTR PCSZ;
 // Specific
 
 typedef UCHAR KIRQL, *PKIRQL;
-typedef LONG KPRIORITY;
+typedef LONG KPRIORITY, *PKPRIORITY;
 typedef USHORT RTL_ATOM, *PRTL_ATOM;
 
 typedef LARGE_INTEGER PHYSICAL_ADDRESS, *PPHYSICAL_ADDRESS;
@@ -323,6 +323,20 @@ typedef struct _KSYSTEM_TIME
 } KSYSTEM_TIME, *PKSYSTEM_TIME;
 
 #include <poppack.h>
+
+// NT macros used to test, set and clear flags
+#ifndef FlagOn
+#define FlagOn(_F, _SF) ((_F) & (_SF))
+#endif
+#ifndef BooleanFlagOn
+#define BooleanFlagOn(F, SF) ((BOOLEAN)(((F) & (SF)) != 0))
+#endif
+#ifndef SetFlag
+#define SetFlag(_F, _SF) ((_F) |= (_SF))
+#endif
+#ifndef ClearFlag
+#define ClearFlag(_F, _SF) ((_F) &= ~(_SF))
+#endif
 
 #endif
 
