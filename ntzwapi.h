@@ -3357,6 +3357,7 @@ ZwQueueApcThreadEx(
     _In_opt_ PVOID ApcArgument3
     );
 
+#if (PHNT_VERSION >= PHNT_WIN11)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -3369,6 +3370,7 @@ ZwQueueApcThreadEx2(
     _In_opt_ PVOID ApcArgument2,
     _In_opt_ PVOID ApcArgument3
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
