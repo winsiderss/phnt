@@ -1084,6 +1084,7 @@ ZwCreatePort(
     _In_opt_ ULONG MaxPoolUsage
     );
 
+#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -1093,6 +1094,7 @@ ZwCreatePrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -1495,12 +1497,14 @@ ZwDeleteObjectAuditAlarm(
     _In_ BOOLEAN GenerateOnClose
     );
 
+#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 ZwDeletePrivateNamespace(
     _In_ HANDLE NamespaceHandle
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -2480,6 +2484,7 @@ ZwOpenPartition(
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
     );
 
+#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -2489,6 +2494,7 @@ ZwOpenPrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
