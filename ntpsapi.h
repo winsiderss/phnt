@@ -315,12 +315,12 @@ typedef struct _PROCESS_BASIC_INFORMATION
 } PROCESS_BASIC_INFORMATION, *PPROCESS_BASIC_INFORMATION;
 
 typedef struct _PROCESS_BASIC_INFORMATION32 {
-    NTSTATUS	ExitStatus;
-    ULONG		PebBaseAddress;
-    ULONG	   	AffinityMask;
-    KPRIORITY	BasePriority;
-    ULONG		uUniqueProcessId;
-    ULONG		uInheritedFromUniqueProcessId;
+    NTSTATUS    ExitStatus;
+    ULONG       PebBaseAddress;
+    ULONG       AffinityMask;
+    KPRIORITY   BasePriority;
+    ULONG       UniqueProcessId;
+    ULONG       InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION32, *PPROCESS_BASIC_INFORMATION32;
 
 typedef struct DECLSPEC_ALIGN(16) _PROCESS_BASIC_INFORMATION64 {
