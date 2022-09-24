@@ -488,6 +488,53 @@ typedef struct _SECTION_IMAGE_INFORMATION
     ULONG CheckSum;
 } SECTION_IMAGE_INFORMATION, *PSECTION_IMAGE_INFORMATION;
 
+typedef struct DECLSPEC_ALIGN(16) _SECTION_IMAGE_INFORMATION64 {
+    ULONGLONG TransferAddress;
+    ULONG     ZeroBits;
+    ULONGLONG MaximumStackSize;
+    ULONGLONG CommittedStackSize;
+    ULONG     SubSystemType;
+    
+    union {
+        struct {
+            USHORT SubSystemMinorVersion;
+            USHORT SubSystemMajorVersion;
+        };
+        ULONG SubSystemVersion;
+    };
+    union
+    {
+        struct
+        {
+            USHORT MajorOperatingSystemVersion;
+            USHORT MinorOperatingSystemVersion;
+        };
+        ULONG OperatingSystemVersion;
+    };
+    USHORT    ImageCharacteristics;
+    USHORT    DllCharacteristics;
+    USHORT    Machine;
+    BOOLEAN   ImageContainsCode;
+    
+    union
+    {
+        UCHAR ImageFlags;
+        struct
+        {
+            UCHAR ComPlusNativeReady : 1;
+            UCHAR ComPlusILOnly : 1;
+            UCHAR ImageDynamicallyRelocated : 1;
+            UCHAR ImageMappedFlat : 1;
+            UCHAR BaseBelow4gb : 1;
+            UCHAR ComPlusPrefer32bit : 1;
+            UCHAR Reserved : 2;
+        };
+    };
+    ULONG LoaderFlags;
+    ULONG ImageFileSize;
+    ULONG CheckSum;
+} SECTION_IMAGE_INFORMATION64, *PSECTION_IMAGE_INFORMATION64;
+
 // symbols
 typedef struct _SECTION_INTERNAL_IMAGE_INFORMATION
 {
@@ -669,6 +716,29 @@ typedef struct _CFG_CALL_TARGET_LIST_INFORMATION
     PVOID Section; // since REDSTONE5
     ULONGLONG FileOffset;
 } CFG_CALL_TARGET_LIST_INFORMATION, *PCFG_CALL_TARGET_LIST_INFORMATION;
+
+typedef struct _MEMORY_RANGE_ENTRY64 
+{
+    ULONGLONG VirtualAddress;
+    ULONGLONG NumberOfBytes;
+} MEMORY_RANGE_ENTRY64, *PMEMORY_RANGE_ENTRY64;
+
+typedef struct _CFG_CALL_TARGET_INFO64 
+{
+    ULONGLONG Offset;
+    ULONGLONG Flags;
+} CFG_CALL_TARGET_INFO64, *PCFG_CALL_TARGET_INFO64;
+
+typedef struct DECLSPEC_ALIGN(16) _CFG_CALL_TARGET_LIST_INFORMATION64 
+{
+    ULONG NumberOfEntries;
+    ULONG Reserved;
+    ULONGLONG NumberOfEntriesProcessed;
+    ULONGLONG CallTargetInfo;
+    ULONGLONG Section;
+    ULONGLONG FileOffset;
+} CFG_CALL_TARGET_LIST_INFORMATION64, *PCFG_CALL_TARGET_LIST_INFORMATION64;
+
 #endif
 // end_private
 

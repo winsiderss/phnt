@@ -238,7 +238,7 @@ typedef const OBJECT_ATTRIBUTES *PCOBJECT_ATTRIBUTES;
 
 // Portability
 
-typedef struct _OBJECT_ATTRIBUTES64
+typedef struct DECLSPEC_ALIGN(16) _OBJECT_ATTRIBUTES64
 {
     ULONG Length;
     ULONG64 RootDirectory;

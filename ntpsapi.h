@@ -314,6 +314,24 @@ typedef struct _PROCESS_BASIC_INFORMATION
     HANDLE InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION, *PPROCESS_BASIC_INFORMATION;
 
+typedef struct _PROCESS_BASIC_INFORMATION32 {
+    NTSTATUS	ExitStatus;
+    ULONG		PebBaseAddress;
+    ULONG	   	AffinityMask;
+    KPRIORITY	BasePriority;
+    ULONG		uUniqueProcessId;
+    ULONG		uInheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION32, *PPROCESS_BASIC_INFORMATION32;
+
+typedef struct DECLSPEC_ALIGN(16) _PROCESS_BASIC_INFORMATION64 {
+    NTSTATUS  ExitStatus;
+    ULONGLONG PebBaseAddress;
+    ULONGLONG AffinityMask;
+    KPRIORITY BasePriority;
+    ULONGLONG UniqueProcessId;
+    ULONGLONG InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION64, *PPROCESS_BASIC_INFORMATION64;
+
 typedef struct _PROCESS_EXTENDED_BASIC_INFORMATION
 {
     SIZE_T Size; // set to sizeof structure on input
@@ -1023,6 +1041,26 @@ typedef struct _THREAD_BASIC_INFORMATION
     KPRIORITY Priority;
     KPRIORITY BasePriority;
 } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+
+typedef struct _THREAD_BASIC_INFORMATION32 
+{
+    NTSTATUS ExitStatus;
+    ULONG TebBaseAddress;
+    CLIENT_ID32 ClientId;
+    KAFFINITY AffinityMask;
+    KPRIORITY Priority;
+    KPRIORITY BasePriority;
+} THREAD_BASIC_INFORMATION32, *PTHREAD_BASIC_INFORMATION32;
+
+typedef struct DECLSPEC_ALIGN(16) _THREAD_BASIC_INFORMATION64 
+{
+    NTSTATUS ExitStatus;
+    ULONGLONG TebBaseAddress;
+    CLIENT_ID64 ClientId;
+    KAFFINITY AffinityMask;
+    KPRIORITY Priority;
+    KPRIORITY BasePriority;
+} THREAD_BASIC_INFORMATION64, *PTHREAD_BASIC_INFORMATION64;
 
 // private
 typedef struct _THREAD_LAST_SYSCALL_INFORMATION
