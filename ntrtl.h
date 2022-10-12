@@ -1496,12 +1496,24 @@ RtlCreateUnicodeStringFromAsciiz(
     _In_ PCSTR SourceString
     );
 
+#ifdef PHNT_INLINE_FREE_UNICODE_STRING
+FORCEINLINE
+VOID
+NTAPI
+RtlFreeUnicodeString(
+    _Inout_ _At_(UnicodeString->Buffer, _Frees_ptr_opt_) PUNICODE_STRING UnicodeString
+    )
+{
+    HeapFree(NtCurrentPeb()->ProcessHeap, 0, UnicodeString->Buffer);
+}
+#else
 NTSYSAPI
 VOID
 NTAPI
 RtlFreeUnicodeString(
     _Inout_ _At_(UnicodeString->Buffer, _Frees_ptr_opt_) PUNICODE_STRING UnicodeString
     );
+#endif
 
 #define RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE (0x00000001)
 #define RTL_DUPLICATE_UNICODE_STRING_ALLOCATE_NULL_STRING (0x00000002)
@@ -2849,6 +2861,8 @@ typedef struct _RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION
     CLIENT_ID ReflectionClientId;
 } RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION, *PRTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION;
 
+typedef RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION PROCESS_REFLECTION_INFORMATION, *PPROCESS_REFLECTION_INFORMATION;
+
 #if (PHNT_VERSION >= PHNT_WIN7)
 // rev
 NTSYSAPI
@@ -3002,13 +3016,13 @@ RtlFreeUserStack(
 
 // Extended thread context
 
-typedef struct _CONTEXT_CHUNK 
+typedef struct _CONTEXT_CHUNK
 {
     LONG Offset; // Offset may be negative.
     ULONG Length;
 } CONTEXT_CHUNK, *PCONTEXT_CHUNK;
 
-typedef struct _CONTEXT_EX 
+typedef struct _CONTEXT_EX
 {
     CONTEXT_CHUNK All;
     CONTEXT_CHUNK Legacy;
@@ -3355,8 +3369,8 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGuardCheckLongJumpTarget(
-    _In_ PVOID PcValue, 
-    _In_ BOOL IsFastFail, 
+    _In_ PVOID PcValue,
+    _In_ BOOL IsFastFail,
     _Out_ PBOOL IsLongJumpTarget
     );
 
@@ -3622,24 +3636,10 @@ RtlDetermineDosPathNameType_U(
     );
 
 NTSYSAPI
-RTL_PATH_TYPE
-NTAPI
-RtlDetermineDosPathNameType_Ustr(
-    _In_ PCUNICODE_STRING DosFileName
-    );
-
-NTSYSAPI
 ULONG
 NTAPI
 RtlIsDosDeviceName_U(
     _In_ PCWSTR DosFileName
-    );
-
-NTSYSAPI
-ULONG
-NTAPI
-RtlIsDosDeviceName_Ustr(
-    _In_ PUNICODE_STRING DosFileName
     );
 
 NTSYSAPI
@@ -3923,6 +3923,18 @@ RtlReplaceSystemDirectoryInPath(
     );
 #endif
 
+#if (PHNT_VERSION >= PHNT_21H2)
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlWow64GetProcessMachines(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PUSHORT ProcessMachine,
+    _Out_ PUSHORT NativeMachine
+    );
+#endif
+
 #if (PHNT_VERSION >= PHNT_REDSTONE2)
 
 // private
@@ -3999,7 +4011,8 @@ typedef struct _RTL_HEAP_TAG
     WCHAR TagName[24];
 } RTL_HEAP_TAG, *PRTL_HEAP_TAG;
 
-typedef struct _RTL_HEAP_INFORMATION
+// Windows 7/8/10
+typedef struct _RTL_HEAP_INFORMATION_V1
 {
     PVOID BaseAddress;
     ULONG Flags;
@@ -4014,17 +4027,41 @@ typedef struct _RTL_HEAP_INFORMATION
     ULONG Reserved[5];
     PRTL_HEAP_TAG Tags;
     PRTL_HEAP_ENTRY Entries;
-    ULONG64 HeapTag; // Windows 11 > 22000
-} RTL_HEAP_INFORMATION, *PRTL_HEAP_INFORMATION;
+} RTL_HEAP_INFORMATION_V1, *PRTL_HEAP_INFORMATION_V1;
+
+// Windows 11 > 22000
+typedef struct _RTL_HEAP_INFORMATION_V2
+{
+    PVOID BaseAddress;
+    ULONG Flags;
+    USHORT EntryOverhead;
+    USHORT CreatorBackTraceIndex;
+    SIZE_T BytesAllocated;
+    SIZE_T BytesCommitted;
+    ULONG NumberOfTags;
+    ULONG NumberOfEntries;
+    ULONG NumberOfPseudoTags;
+    ULONG PseudoTagGranularity;
+    ULONG Reserved[5];
+    PRTL_HEAP_TAG Tags;
+    PRTL_HEAP_ENTRY Entries;
+    ULONG64 HeapTag;
+} RTL_HEAP_INFORMATION_V2, *PRTL_HEAP_INFORMATION_V2;
 
 #define RTL_HEAP_SIGNATURE 0xFFEEFFEEUL
 #define RTL_HEAP_SEGMENT_SIGNATURE 0xDDEEDDEEUL
 
-typedef struct _RTL_PROCESS_HEAPS
+typedef struct _RTL_PROCESS_HEAPS_V1
 {
     ULONG NumberOfHeaps;
-    RTL_HEAP_INFORMATION Heaps[1];
-} RTL_PROCESS_HEAPS, *PRTL_PROCESS_HEAPS;
+    RTL_HEAP_INFORMATION_V1 Heaps[1];
+} RTL_PROCESS_HEAPS_V1, *PRTL_PROCESS_HEAPS_V1;
+
+typedef struct _RTL_PROCESS_HEAPS_V2
+{
+    ULONG NumberOfHeaps;
+    RTL_HEAP_INFORMATION_V2 Heaps[1];
+} RTL_PROCESS_HEAPS_V2, *PRTL_PROCESS_HEAPS_V2;
 
 typedef NTSTATUS (NTAPI *PRTL_HEAP_COMMIT_ROUTINE)(
     _In_ PVOID Base,
@@ -4358,10 +4395,11 @@ RtlWalkHeap(
 #define HeapCompatibilityInformation 0x0 // q; s: ULONG
 #define HeapEnableTerminationOnCorruption 0x1 // q; s: NULL
 #define HeapExtendedInformation 0x2 // q; s: HEAP_EXTENDED_INFORMATION
-#define HeapOptimizeResources 0x3 // q; s: HEAP_OPTIMIZE_RESOURCES_INFORMATION 
+#define HeapOptimizeResources 0x3 // q; s: HEAP_OPTIMIZE_RESOURCES_INFORMATION
 #define HeapTaggingInformation 0x4
-#define HeapStackDatabase 0x5
-#define HeapMemoryLimit 0x6 // 19H2
+#define HeapStackDatabase 0x5 // q: RTL_HEAP_STACK_QUERY; s: RTL_HEAP_STACK_CONTROL
+#define HeapMemoryLimit 0x6 // since 19H2
+#define HeapTag 0x7 // since 20H1
 #define HeapDetailedFailureInformation 0x80000001
 #define HeapSetDebuggingInformation 0x80000002 // q; s: HEAP_DEBUGGING_INFORMATION
 
@@ -4372,30 +4410,137 @@ typedef enum _HEAP_COMPATIBILITY_MODE
     HEAP_COMPATIBILITY_LFH = 2UL,
 } HEAP_COMPATIBILITY_MODE;
 
+typedef struct _RTLP_TAG_INFO
+{
+    GUID Id;
+    ULONG_PTR CurrentAllocatedBytes;
+} RTLP_TAG_INFO, *PRTLP_TAG_INFO;
+
+typedef struct _RTLP_HEAP_TAGGING_INFO
+{
+    USHORT Version;
+    USHORT Flags;
+    PVOID ProcessHandle;
+    ULONG_PTR EntriesCount;
+    RTLP_TAG_INFO Entries[1];
+} RTLP_HEAP_TAGGING_INFO, *PRTLP_HEAP_TAGGING_INFO;
+
 typedef struct _PROCESS_HEAP_INFORMATION
 {
-    ULONG_PTR ReserveSize;
-    ULONG_PTR CommitSize;
+    SIZE_T ReserveSize;
+    SIZE_T CommitSize;
     ULONG NumberOfHeaps;
     ULONG_PTR FirstHeapInformationOffset;
 } PROCESS_HEAP_INFORMATION, *PPROCESS_HEAP_INFORMATION;
 
+typedef struct _HEAP_REGION_INFORMATION
+{
+    PVOID Address;
+    SIZE_T ReserveSize;
+    SIZE_T CommitSize;
+    ULONG_PTR FirstRangeInformationOffset;
+    ULONG_PTR NextRegionInformationOffset;
+} HEAP_REGION_INFORMATION, *PHEAP_REGION_INFORMATION;
+
+typedef struct _HEAP_RANGE_INFORMATION
+{
+    PVOID Address;
+    SIZE_T Size;
+    ULONG Type;
+    ULONG Protection;
+    ULONG_PTR FirstBlockInformationOffset;
+    ULONG_PTR NextRangeInformationOffset;
+} HEAP_RANGE_INFORMATION, *PHEAP_RANGE_INFORMATION;
+
+typedef struct _HEAP_BLOCK_INFORMATION
+{
+    PVOID Address;
+    ULONG Flags;
+    SIZE_T DataSize;
+    ULONG_PTR OverheadSize;
+    ULONG_PTR NextBlockInformationOffset;
+} HEAP_BLOCK_INFORMATION, *PHEAP_BLOCK_INFORMATION;
+
 typedef struct _HEAP_INFORMATION
 {
-    ULONG_PTR Address;
+    PVOID Address;
     ULONG Mode;
-    ULONG_PTR ReserveSize;
-    ULONG_PTR CommitSize;
+    SIZE_T ReserveSize;
+    SIZE_T CommitSize;
     ULONG_PTR FirstRegionInformationOffset;
     ULONG_PTR NextHeapInformationOffset;
 } HEAP_INFORMATION, *PHEAP_INFORMATION;
 
+typedef struct _SEGMENT_HEAP_PERFORMANCE_COUNTER_INFORMATION
+{
+    SIZE_T SegmentReserveSize;
+    SIZE_T SegmentCommitSize;
+    ULONG_PTR SegmentCount;
+    SIZE_T AllocatedSize;
+    SIZE_T LargeAllocReserveSize;
+    SIZE_T LargeAllocCommitSize;
+} SEGMENT_HEAP_PERFORMANCE_COUNTER_INFORMATION, *PSEGMENT_HEAP_PERFORMANCE_COUNTER_INFORMATION;
+
+#define HeapPerformanceCountersInformationStandardHeapVersion 0x1
+#define HeapPerformanceCountersInformationSegmentHeapVersion 0x2
+
+typedef struct _HEAP_PERFORMANCE_COUNTERS_INFORMATION
+{
+    ULONG Size;
+    ULONG Version;
+    ULONG HeapIndex;
+    ULONG LastHeapIndex;
+    PVOID BaseAddress;
+    SIZE_T ReserveSize;
+    SIZE_T CommitSize;
+    ULONG SegmentCount;
+    SIZE_T LargeUCRMemory;
+    ULONG UCRLength;
+    SIZE_T AllocatedSpace;
+    SIZE_T FreeSpace;
+    ULONG FreeListLength;
+    ULONG Contention;
+    ULONG VirtualBlocks;
+    ULONG CommitRate;
+    ULONG DecommitRate;
+    SEGMENT_HEAP_PERFORMANCE_COUNTER_INFORMATION SegmentHeapPerfInformation; // since WIN8
+} HEAP_PERFORMANCE_COUNTERS_INFORMATION, *PHEAP_PERFORMANCE_COUNTERS_INFORMATION;
+
+typedef struct _HEAP_INFORMATION_ITEM
+{
+    ULONG Level;
+    SIZE_T Size;
+    union
+    {
+        PROCESS_HEAP_INFORMATION ProcessHeapInformation;
+        HEAP_INFORMATION HeapInformation;
+        HEAP_REGION_INFORMATION HeapRegionInformation;
+        HEAP_RANGE_INFORMATION HeapRangeInformation;
+        HEAP_BLOCK_INFORMATION HeapBlockInformation;
+        HEAP_PERFORMANCE_COUNTERS_INFORMATION HeapPerfInformation;
+        ULONG_PTR DynamicStart;
+    };
+} HEAP_INFORMATION_ITEM, *PHEAP_INFORMATION_ITEM;
+
+typedef NTSTATUS (NTAPI *PRTL_HEAP_EXTENDED_ENUMERATION_ROUTINE)(
+    _In_ PHEAP_INFORMATION_ITEM Information,
+    _In_ PVOID Context
+    );
+
+// HEAP_EXTENDED_INFORMATION Level
+#define HeapExtendedProcessHeapInformationLevel 0x1
+#define HeapExtendedHeapInformationLevel 0x2
+#define HeapExtendedHeapRegionInformationLevel 0x3
+#define HeapExtendedHeapRangeInformationLevel 0x4
+#define HeapExtendedHeapBlockInformationLevel 0x5
+#define HeapExtendedHeapHeapPerfInformationLevel 0x80000000
+
 typedef struct _HEAP_EXTENDED_INFORMATION
 {
-    HANDLE Process;
-    ULONG_PTR Heap;
+    HANDLE ProcessHandle;
+    PVOID HeapHandle;
     ULONG Level;
-    PVOID CallbackRoutine;
+    PRTL_HEAP_EXTENDED_ENUMERATION_ROUTINE CallbackRoutine;
     PVOID CallbackContext;
     union
     {
@@ -4403,6 +4548,76 @@ typedef struct _HEAP_EXTENDED_INFORMATION
         HEAP_INFORMATION HeapInformation;
     };
 } HEAP_EXTENDED_INFORMATION, *PHEAP_EXTENDED_INFORMATION;
+
+// rev
+typedef NTSTATUS (NTAPI *RTL_HEAP_STACK_WRITE_ROUTINE)(
+    _In_ PVOID Information, // TODO: 3 missing structures (dmex)
+    _In_ ULONG Size,
+    _In_ PVOID Context
+    );
+
+// rev
+typedef struct _RTLP_HEAP_STACK_TRACE_SERIALIZATION_INIT
+{
+    ULONG Count;
+    ULONG Total;
+    ULONG Flags;
+} RTLP_HEAP_STACK_TRACE_SERIALIZATION_INIT, *PRTLP_HEAP_STACK_TRACE_SERIALIZATION_INIT;
+
+// rev
+typedef struct _RTLP_HEAP_STACK_TRACE_SERIALIZATION_HEADER
+{
+    USHORT Version;
+    USHORT PointerSize;
+    PVOID Heap;
+    SIZE_T TotalCommit;
+    SIZE_T TotalReserve;
+} RTLP_HEAP_STACK_TRACE_SERIALIZATION_HEADER, *PRTLP_HEAP_STACK_TRACE_SERIALIZATION_HEADER;
+
+// rev
+typedef struct _RTLP_HEAP_STACK_TRACE_SERIALIZATION_ALLOCATION
+{
+    PVOID Address;
+    ULONG Flags;
+    SIZE_T DataSize;
+} RTLP_HEAP_STACK_TRACE_SERIALIZATION_ALLOCATION, *PRTLP_HEAP_STACK_TRACE_SERIALIZATION_ALLOCATION;
+
+// rev
+typedef struct _RTLP_HEAP_STACK_TRACE_SERIALIZATION_STACKFRAME
+{
+    PVOID StackFrame[8];
+} RTLP_HEAP_STACK_TRACE_SERIALIZATION_STACKFRAME, *PRTLP_HEAP_STACK_TRACE_SERIALIZATION_STACKFRAME;
+
+#define HEAP_STACK_QUERY_VERSION 0x2
+
+typedef struct _RTL_HEAP_STACK_QUERY
+{
+    ULONG Version;
+    HANDLE ProcessHandle;
+    RTL_HEAP_STACK_WRITE_ROUTINE WriteRoutine;
+    PVOID SerializationContext;
+    UCHAR QueryLevel;
+    UCHAR Flags;
+} RTL_HEAP_STACK_QUERY, *PRTL_HEAP_STACK_QUERY;
+
+#define HEAP_STACK_CONTROL_VERSION 0x1
+#define HEAP_STACK_CONTROL_FLAGS_STACKTRACE_ENABLE 0x1
+#define HEAP_STACK_CONTROL_FLAGS_STACKTRACE_DISABLE 0x2
+
+typedef struct _RTL_HEAP_STACK_CONTROL
+{
+    USHORT Version;
+    USHORT Flags;
+    HANDLE ProcessHandle;
+} RTL_HEAP_STACK_CONTROL, *PRTL_HEAP_STACK_CONTROL;
+
+// rev
+typedef NTSTATUS (NTAPI *PRTL_HEAP_DEBUGGING_INTERCEPTOR_ROUTINE)(
+    _In_ PVOID HeapHandle,
+    _In_ ULONG Action,
+    _In_ ULONG StackFramesToCapture,
+    _In_ PVOID *StackTrace
+    );
 
 // rev
 typedef NTSTATUS (NTAPI *PRTL_HEAP_LEAK_ENUMERATION_ROUTINE)(
@@ -4417,7 +4632,7 @@ typedef NTSTATUS (NTAPI *PRTL_HEAP_LEAK_ENUMERATION_ROUTINE)(
 // symbols
 typedef struct _HEAP_DEBUGGING_INFORMATION
 {
-    PVOID InterceptorFunction;
+    PRTL_HEAP_DEBUGGING_INTERCEPTOR_ROUTINE InterceptorFunction;
     USHORT InterceptorValue;
     ULONG ExtendedOptions;
     ULONG StackTraceDepth;
@@ -4430,7 +4645,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlQueryHeapInformation(
-    _In_ PVOID HeapHandle,
+    _In_opt_ PVOID HeapHandle,
     _In_ HEAP_INFORMATION_CLASS HeapInformationClass,
     _Out_opt_ PVOID HeapInformation,
     _In_opt_ SIZE_T HeapInformationLength,
@@ -4441,7 +4656,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlSetHeapInformation(
-    _In_ PVOID HeapHandle,
+    _In_opt_ PVOID HeapHandle,
     _In_ HEAP_INFORMATION_CLASS HeapInformationClass,
     _In_opt_ PVOID HeapInformation,
     _In_opt_ SIZE_T HeapInformationLength
@@ -4774,7 +4989,7 @@ typedef struct _RTL_DEBUG_INFORMATION
         struct _RTL_PROCESS_MODULE_INFORMATION_EX *ModulesEx;
     };
     struct _RTL_PROCESS_BACKTRACES *BackTraces;
-    struct _RTL_PROCESS_HEAPS *Heaps;
+    PVOID Heaps;
     struct _RTL_PROCESS_LOCKS *Locks;
     PVOID SpecificHeap;
     HANDLE TargetProcessHandle;
@@ -7752,7 +7967,7 @@ typedef struct _RTL_UNLOAD_EVENT_TRACE
     ULONG Version[2];
 } RTL_UNLOAD_EVENT_TRACE, *PRTL_UNLOAD_EVENT_TRACE;
 
-typedef struct _RTL_UNLOAD_EVENT_TRACE32 
+typedef struct _RTL_UNLOAD_EVENT_TRACE32
 {
     ULONG BaseAddress;
     ULONG SizeOfImage;
@@ -7997,7 +8212,7 @@ RtlSetImageMitigationPolicy(
 
 #endif
 
-// session 
+// session
 
 // rev
 NTSYSAPI
@@ -8033,8 +8248,8 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGetTokenNamedObjectPath(
-    _In_ HANDLE Token, 
-    _In_opt_ PSID Sid, 
+    _In_ HANDLE Token,
+    _In_opt_ PSID Sid,
     _Out_ PUNICODE_STRING ObjectPath // RtlFreeUnicodeString
     );
 #endif
@@ -8058,7 +8273,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlGetAppContainerParent(
-    _In_ PSID AppContainerSid, 
+    _In_ PSID AppContainerSid,
     _Out_ PSID* AppContainerSidParent // RtlFreeSid
     );
 #endif
@@ -8225,7 +8440,25 @@ RtlFlsFree(
     _In_ ULONG FlsIndex
     );
 
-typedef enum _STATE_LOCATION_TYPE 
+#if (PHNT_VERSION >= PHNT_20H1)
+NTSYSAPI
+NTSTATUS
+WINAPI
+RtlFlsGetValue(
+    _In_ ULONG FlsIndex,
+    _Out_ PVOID* FlsData
+    );
+
+NTSYSAPI
+NTSTATUS
+WINAPI
+RtlFlsSetValue(
+    _In_ ULONG FlsIndex,
+    _In_ PVOID FlsData
+    );
+#endif
+
+typedef enum _STATE_LOCATION_TYPE
 {
     LocationTypeRegistry,
     LocationTypeFileSystem,
@@ -8348,7 +8581,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlAppxIsFileOwnedByTrustedInstaller(
-    _In_ HANDLE FileHandle, 
+    _In_ HANDLE FileHandle,
     _Out_ PBOOLEAN IsFileOwnedByTrustedInstaller
     );
 #endif
@@ -8555,7 +8788,7 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlCheckBootStatusIntegrity(
-    _In_ HANDLE FileHandle, 
+    _In_ HANDLE FileHandle,
     _Out_ PBOOLEAN Verified
     );
 

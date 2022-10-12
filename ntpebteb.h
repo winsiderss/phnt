@@ -56,7 +56,7 @@ typedef struct _API_SET_NAMESPACE_ENTRY
 } API_SET_NAMESPACE_ENTRY, *PAPI_SET_NAMESPACE_ENTRY;
 
 // private
-typedef struct _API_SET_VALUE_ENTRY 
+typedef struct _API_SET_VALUE_ENTRY
 {
     ULONG Flags;
     ULONG NameOffset;
@@ -125,11 +125,11 @@ typedef struct _PEB
     ULONG TlsExpansionCounter;
     PVOID TlsBitmap;
     ULONG TlsBitmapBits[2];
-    
-    PVOID ReadOnlySharedMemoryBase; 
+
+    PVOID ReadOnlySharedMemoryBase;
     PVOID SharedData; // HotpatchInformation
     PVOID *ReadOnlyStaticServerData;
-    
+
     PVOID AnsiCodePageData; // PCPTABLEINFO
     PVOID OemCodePageData; // PCPTABLEINFO
     PVOID UnicodeCaseTableData; // PNLSTABLEINFO
@@ -184,13 +184,17 @@ typedef struct _PEB
 
     SIZE_T MinimumStackCommit;
 
-    PVOID SparePointers[4]; // 19H1 (previously FlsCallback to FlsHighIndex)
-    ULONG SpareUlongs[5]; // 19H1
-    //PVOID* FlsCallback;
-    //LIST_ENTRY FlsListHead;
-    //PVOID FlsBitmap;
-    //ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
-    //ULONG FlsHighIndex;
+    PVOID SparePointers[2]; // 19H1 (previously FlsCallback to FlsHighIndex)
+    PVOID PatchLoaderData;
+    PVOID ChpeV2ProcessInfo; // _CHPEV2_PROCESS_INFO
+
+    ULONG AppModelFeatureState;
+    ULONG SpareUlongs[2];
+
+    USHORT ActiveCodePage;
+    USHORT OemCodePage;
+    USHORT UseCaseMapping;
+    USHORT UnusedNlsField;
 
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
@@ -234,18 +238,21 @@ typedef struct _PEB
         };
     };
     ULONG NtGlobalFlag2;
+    ULONGLONG ExtendedFeatureDisableMask; // since WIN11
 } PEB, *PPEB;
 
 #ifdef _WIN64
 C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x2C0);
 //C_ASSERT(sizeof(PEB) == 0x7B0); // REDSTONE3
 //C_ASSERT(sizeof(PEB) == 0x7B8); // REDSTONE4
-C_ASSERT(sizeof(PEB) == 0x7C8); // REDSTONE5 // 19H1
+//C_ASSERT(sizeof(PEB) == 0x7C8); // REDSTONE5 // 19H1
+C_ASSERT(sizeof(PEB) == 0x7d0); // WIN11
 #else
 C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x1D4);
 //C_ASSERT(sizeof(PEB) == 0x468); // REDSTONE3
 //C_ASSERT(sizeof(PEB) == 0x470); // REDSTONE4
-C_ASSERT(sizeof(PEB) == 0x480); // REDSTONE5 // 19H1
+//C_ASSERT(sizeof(PEB) == 0x480); // REDSTONE5 // 19H1
+C_ASSERT(sizeof(PEB) == 0x488); // WIN11
 #endif
 
 #define GDI_BATCH_BUFFER_SIZE 310
@@ -295,14 +302,14 @@ typedef struct _TEB
 #else
     PVOID SystemReserved1[26];
 #endif
-    
+
     CHAR PlaceholderCompatibilityMode;
     BOOLEAN PlaceholderHydrationAlwaysExplicit;
     CHAR PlaceholderReserved[10];
 
     ULONG ProxiedProcessId;
     ACTIVATION_CONTEXT_STACK ActivationStack;
-    
+
     UCHAR WorkingOnBehalfTicket[8];
     NTSTATUS ExceptionCode;
 

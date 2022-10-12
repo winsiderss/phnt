@@ -1084,7 +1084,6 @@ ZwCreatePort(
     _In_opt_ ULONG MaxPoolUsage
     );
 
-#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -1094,7 +1093,6 @@ ZwCreatePrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
-#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -1497,14 +1495,12 @@ ZwDeleteObjectAuditAlarm(
     _In_ BOOLEAN GenerateOnClose
     );
 
-#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 ZwDeletePrivateNamespace(
     _In_ HANDLE NamespaceHandle
     );
-#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -1630,7 +1626,7 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 ZwEnumerateSystemEnvironmentValuesEx(
-    _In_ ULONG InformationClass,
+    _In_ ULONG InformationClass, // SYSTEM_ENVIRONMENT_INFORMATION_CLASS
     _Out_ PVOID Buffer,
     _Inout_ PULONG BufferLength
     );
@@ -2484,7 +2480,6 @@ ZwOpenPartition(
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
     );
 
-#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -2494,7 +2489,6 @@ ZwOpenPrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
-#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -3227,7 +3221,7 @@ NTSTATUS
 NTAPI
 ZwQuerySystemEnvironmentValueEx(
     _In_ PUNICODE_STRING VariableName,
-    _In_ LPGUID VendorGuid,
+    _In_ PGUID VendorGuid,
     _Out_writes_bytes_opt_(*ValueLength) PVOID Value,
     _Inout_ PULONG ValueLength,
     _Out_opt_ PULONG Attributes // EFI_VARIABLE_*
@@ -3363,20 +3357,18 @@ ZwQueueApcThreadEx(
     _In_opt_ PVOID ApcArgument3
     );
 
-#if (PHNT_VERSION >= PHNT_WIN11)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 ZwQueueApcThreadEx2(
     _In_ HANDLE ThreadHandle,
     _In_opt_ HANDLE ReserveHandle, // NtAllocateReserveObject
-    _In_ QUEUE_USER_APC_FLAGS ApcFlags,
+    _In_ ULONG ApcFlags, // QUEUE_USER_APC_FLAGS
     _In_ PPS_APC_ROUTINE ApcRoutine,
     _In_opt_ PVOID ApcArgument1,
     _In_opt_ PVOID ApcArgument2,
     _In_opt_ PVOID ApcArgument3
     );
-#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -4159,7 +4151,7 @@ NTSTATUS
 NTAPI
 ZwSetSystemEnvironmentValueEx(
     _In_ PUNICODE_STRING VariableName,
-    _In_ LPGUID VendorGuid,
+    _In_ PGUID VendorGuid,
     _In_reads_bytes_opt_(ValueLength) PVOID Value,
     _In_ ULONG ValueLength, // 0 = delete variable
     _In_ ULONG Attributes // EFI_VARIABLE_*
@@ -4614,7 +4606,10 @@ NTSTATUS
 NTAPI
 ZwWaitForWorkViaWorkerFactory(
     _In_ HANDLE WorkerFactoryHandle,
-    _Out_ struct _FILE_IO_COMPLETION_INFORMATION *MiniPacket
+    _Out_writes_to_(Count, *PacketsReturned) struct _FILE_IO_COMPLETION_INFORMATION *MiniPackets,
+    _In_ ULONG Count,
+    _Out_ PULONG PacketsReturned,
+    _In_ struct _WORKER_FACTORY_DEFERRED_WORK* DeferredWork
     );
 
 NTSYSCALLAPI

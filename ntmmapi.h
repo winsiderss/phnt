@@ -30,11 +30,11 @@
 #define PAGE_ENCLAVE_THREAD_CONTROL 0x80000000
 #define PAGE_TARGETS_NO_UPDATE      0x40000000
 #define PAGE_TARGETS_INVALID        0x40000000
-#define PAGE_ENCLAVE_UNVALIDATED    0x20000000  
+#define PAGE_ENCLAVE_UNVALIDATED    0x20000000
 #define PAGE_ENCLAVE_NO_CHANGE      0x20000000
-#define PAGE_ENCLAVE_MASK           0x10000000  
-#define PAGE_ENCLAVE_DECOMMIT       (PAGE_ENCLAVE_MASK | 0) 
-#define PAGE_ENCLAVE_SS_FIRST       (PAGE_ENCLAVE_MASK | 1) 
+#define PAGE_ENCLAVE_MASK           0x10000000
+#define PAGE_ENCLAVE_DECOMMIT       (PAGE_ENCLAVE_MASK | 0)
+#define PAGE_ENCLAVE_SS_FIRST       (PAGE_ENCLAVE_MASK | 1)
 #define PAGE_ENCLAVE_SS_REST        (PAGE_ENCLAVE_MASK | 2)
 
 // Region and section constants
@@ -64,8 +64,8 @@
 #define MEM_REPLACE_PLACEHOLDER 0x00004000
 #define MEM_RESERVE_PLACEHOLDER 0x00040000
 
-#define SEC_HUGE_PAGES 0x00020000  
-#define SEC_PARTITION_OWNER_HANDLE 0x00040000 
+#define SEC_HUGE_PAGES 0x00020000
+#define SEC_PARTITION_OWNER_HANDLE 0x00040000
 #define SEC_64K_PAGES 0x00080000
 #define SEC_BASED 0x00200000
 #define SEC_NO_CHANGE 0x00400000
@@ -171,7 +171,7 @@ typedef struct _MEMORY_REGION_INFORMATION
     ULONG_PTR NodePreference; // 20H1
 } MEMORY_REGION_INFORMATION, *PMEMORY_REGION_INFORMATION;
 
-// private 
+// private
 typedef enum _MEMORY_WORKING_SET_EX_LOCATION
 {
     MemoryLocationInvalid,
@@ -955,7 +955,7 @@ typedef struct _MEMORY_PARTITION_INITIAL_ADD_INFORMATION
 typedef struct _MEMORY_PARTITION_MEMORY_EVENTS_INFORMATION
 {
     union
-    {    
+    {
         struct
         {
             ULONG CommitEvents : 1;
@@ -963,7 +963,7 @@ typedef struct _MEMORY_PARTITION_MEMORY_EVENTS_INFORMATION
         };
         ULONG AllFlags;
     } Flags;
-    
+
     ULONG HandleAttributes;
     ULONG DesiredAccess;
     HANDLE LowCommitCondition; // \KernelObjects\LowCommitCondition

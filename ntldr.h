@@ -12,8 +12,6 @@
 #ifndef _NTLDR_H
 #define _NTLDR_H
 
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-
 // DLLs
 
 typedef BOOLEAN (NTAPI *PLDR_INIT_ROUTINE)(
@@ -227,6 +225,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 #define LDR_DATAFILE_TO_MAPPEDVIEW(DllHandle) ((PVOID)(((ULONG_PTR)(DllHandle)) & ~(ULONG_PTR)1))
 #define LDR_IMAGEMAPPING_TO_MAPPEDVIEW(DllHandle) ((PVOID)(((ULONG_PTR)(DllHandle)) & ~(ULONG_PTR)2))
 #define LDR_IS_RESOURCE(DllHandle) (LDR_IS_IMAGEMAPPING(DllHandle) || LDR_IS_DATAFILE(DllHandle))
+
+#if (PHNT_MODE != PHNT_MODE_KERNEL)
 
 NTSYSAPI
 NTSTATUS
@@ -676,12 +676,12 @@ LdrGetFileNameFromLoadAsDataTable(
 #endif
 
 NTSYSAPI
-NTSTATUS 
-NTAPI 
+NTSTATUS
+NTAPI
 LdrDisableThreadCalloutsForDll(
     _In_ PVOID DllImageBase
     );
-    
+
 // Resources
 
 NTSYSAPI
@@ -737,7 +737,7 @@ LdrFindResourceDirectory_U(
     _Out_ PIMAGE_RESOURCE_DIRECTORY *ResourceDirectory
     );
 
-// private 
+// private
 typedef struct _LDR_ENUM_RESOURCE_ENTRY
 {
     union
@@ -846,8 +846,8 @@ LdrQueryProcessModuleInformation(
     );
 
 typedef VOID (NTAPI *PLDR_ENUM_CALLBACK)(
-    _In_ PLDR_DATA_TABLE_ENTRY ModuleInformation, 
-    _In_ PVOID Parameter, 
+    _In_ PLDR_DATA_TABLE_ENTRY ModuleInformation,
+    _In_ PVOID Parameter,
     _Out_ BOOLEAN *Stop
     );
 
