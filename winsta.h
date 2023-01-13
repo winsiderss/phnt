@@ -160,7 +160,7 @@ typedef enum _WINSTATIONINFOCLASS
     WinStationReconnectedFromId, // ULONG
     WinStationEffectsPolicy, // ULONG
     WinStationType, // ULONG
-    WinStationInformationEx, // WINSTATIONINFORMATIONEX 
+    WinStationInformationEx, // WINSTATIONINFORMATIONEX
     WinStationValidationInfo
 } WINSTATIONINFOCLASS;
 
@@ -566,7 +566,7 @@ typedef struct _WINSTATIONVIDEODATA
 
 typedef enum _CDCLASS
 {
-    CdNone, // No connection driver.   
+    CdNone, // No connection driver.
     CdModem, // Connection driver is a modem.
     CdClass_Maximum,
 } CDCLASS;
