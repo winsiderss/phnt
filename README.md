@@ -11,7 +11,7 @@ These header files are designed to be used by user-mode programs. Instead of `#i
 #include <phnt.h>
 ```
 
-at the top of your program. The first line provides access to the Win32 API as well as the `NTSTATUS` values. The second line provides access to the entire Native API. By default, only definitions present in Windows XP are included into your program. To change this, use one of the following:
+at the top of your program. The first line provides access to the Win32 API as well as the `NTSTATUS` values. The second line provides access to the entire Native API. By default, only definitions present in Windows 7 are included into your program. To change this, use one of the following:
 
 ```
 #define PHNT_VERSION PHNT_WINXP // Windows XP
