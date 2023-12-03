@@ -1,1 +1,2 @@
 nuget/build/native/include
+*.nupkg
