@@ -1,3 +1,5 @@
+执行`NuGet打包.ps1`以生成nupkg。`nuget\PHNT.nuspec`可以编辑程序包元数据。
+
 This collection of Native API header files has been maintained since 2009 for the Process Hacker project, and is the most up-to-date set of Native API definitions that we know of. We have gathered these definitions from official Microsoft header files and symbol files, as well as a lot of reverse engineering and guessing. See `phnt.h` for more information.
 
 ## Usage
