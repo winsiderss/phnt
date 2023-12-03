@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+	<metadata>
+		<id>PHNT</id>
+		<version>1.0.0</version>
+		<description>
+This collection of Native API header files has been maintained since 2009 for the Process Hacker project, and is the most up-to-date set of Native API definitions that we know of. We have gathered these definitions from official Microsoft header files and symbol files, as well as a lot of reverse engineering and guessing. See phnt.h for more information.
+		</description>
+		<authors>埃博拉酱</authors>
+		<projectUrl>https://github.com/Silver-Fang/phnt_NuGet</projectUrl>
+		<tags>native</tags>
+		<icon>图标.jpg</icon>
+		<license type="expression">CC-BY-4.0</license>
+		<summary>Native API header files for the System Informer project.</summary>
+		<releaseNotes>
+			首次NuGet发布
+		</releaseNotes>
+		<readme>README.md</readme>
+	</metadata>
+	<!-- 不能指定files，否则只会包含files中的文件 -->
+</package>
