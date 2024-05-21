@@ -1,4 +1,4 @@
-This collection of Native API header files has been maintained since 2009 for the Process Hacker project, and is the most up-to-date set of Native API definitions that we know of. We have gathered these definitions from official Microsoft header files and symbol files, as well as a lot of reverse engineering and guessing. See `phnt.h` for more information.
+This collection of Native API header files has been maintained since 2009 for the System Informer project, and is the most up-to-date set of Native API definitions that we know of. We have gathered these definitions from official Microsoft header files and symbol files, as well as a lot of reverse engineering and guessing. See `phnt.h` for more information.
 
 ## Usage
 
@@ -21,4 +21,5 @@ at the top of your program. The first line provides access to the Win32 API as w
 #define PHNT_VERSION PHNT_WIN8 // Windows 8
 #define PHNT_VERSION PHNT_WINBLUE // Windows 8.1
 #define PHNT_VERSION PHNT_THRESHOLD // Windows 10
+#define PHNT_VERSION PHNT_WIN11 // Windows 11
 ```
