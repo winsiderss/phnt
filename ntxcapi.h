@@ -1,12 +1,7 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
+ * Exception support functions
  *
- * You can redistribute this file and/or modify it under the terms of the 
- * Attribution 4.0 International (CC BY 4.0) license. 
- * 
- * You must give appropriate credit, provide a link to the license, and 
- * indicate if changes were made. You may do so in any reasonable manner, but 
- * not in any way that suggests the licensor endorses you or your use.
+ * This file is part of System Informer.
  */
 
 #ifndef _NTXCAPI_H
@@ -34,6 +29,26 @@ NTAPI
 RtlRaiseException(
     _In_ PEXCEPTION_RECORD ExceptionRecord
     );
+
+#if (PHNT_VERSION >= PHNT_20H1)
+// rev
+NTSYSAPI
+VOID
+NTAPI
+RtlRaiseExceptionForReturnAddressHijack(
+    VOID
+    );
+
+// rev
+NTSYSAPI
+DECLSPEC_NORETURN
+VOID
+NTAPI
+RtlRaiseNoncontinuableException(
+    _In_ PEXCEPTION_RECORD ExceptionRecord,
+    _In_ PCONTEXT ContextRecord
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -91,8 +106,8 @@ NtRaiseException(
     _In_ BOOLEAN FirstChance
     );
 
-__analysis_noreturn
 NTSYSCALLAPI
+DECLSPEC_NORETURN
 VOID
 NTAPI
 RtlAssert(

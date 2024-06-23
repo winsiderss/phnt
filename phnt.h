@@ -1,12 +1,7 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
+ * NT Header annotations
  *
- * You can redistribute this file and/or modify it under the terms of the 
- * Attribution 4.0 International (CC BY 4.0) license. 
- * 
- * You must give appropriate credit, provide a link to the license, and 
- * indicate if changes were made. You may do so in any reasonable manner, but 
- * not in any way that suggests the licensor endorses you or your use.
+ * This file is part of System Informer.
  */
 
 #ifndef _PHNT_H
@@ -54,16 +49,19 @@
 #define PHNT_20H1 109
 #define PHNT_20H2 110
 #define PHNT_21H1 111
-#define PHNT_21H2 112
-#define PHNT_WIN11 113
-#define PHNT_WIN11_22H2 114
+#define PHNT_WIN10_21H2 112
+#define PHNT_WIN10_22H2 113
+#define PHNT_WIN11 114
+#define PHNT_WIN11_22H2 115
+#define PHNT_WIN11_23H2 116
+#define PHNT_WIN11_24H2 117
 
 #ifndef PHNT_MODE
 #define PHNT_MODE PHNT_MODE_USER
 #endif
 
 #ifndef PHNT_VERSION
-#define PHNT_VERSION PHNT_WIN7
+#define PHNT_VERSION PHNT_WIN11
 #endif
 
 // Options
@@ -77,9 +75,9 @@ extern "C" {
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
 #include <phnt_ntdef.h>
 #include <ntnls.h>
-#include <ntkeapi.h>
 #endif
 
+#include <ntkeapi.h>
 #include <ntldr.h>
 #include <ntexapi.h>
 
@@ -98,6 +96,7 @@ extern "C" {
 #include <ntpoapi.h>
 #include <ntregapi.h>
 #include <ntrtl.h>
+#include <ntimage.h>
 #endif
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
@@ -113,6 +112,7 @@ extern "C" {
 #include <ntsam.h>
 
 #include <ntmisc.h>
+#include <ntwmi.h>
 
 #include <ntzwapi.h>
 

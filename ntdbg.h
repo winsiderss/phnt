@@ -1,12 +1,7 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
+ * Debugger support functions
  *
- * You can redistribute this file and/or modify it under the terms of the 
- * Attribution 4.0 International (CC BY 4.0) license. 
- * 
- * You must give appropriate credit, provide a link to the license, and 
- * indicate if changes were made. You may do so in any reasonable manner, but 
- * not in any way that suggests the licensor endorses you or your use.
+ * This file is part of System Informer.
  */
 
 #ifndef _NTDBG_H
@@ -358,7 +353,7 @@ DbgUiConvertStateChangeStructureEx(
     _Out_ LPDEBUG_EVENT DebugEvent
     );
 
-struct _EVENT_FILTER_DESCRIPTOR;
+typedef struct _EVENT_FILTER_DESCRIPTOR *PEVENT_FILTER_DESCRIPTOR;
 
 typedef VOID (NTAPI *PENABLECALLBACK)(
     _In_ LPCGUID SourceId,
@@ -366,7 +361,7 @@ typedef VOID (NTAPI *PENABLECALLBACK)(
     _In_ UCHAR Level,
     _In_ ULONGLONG MatchAnyKeyword,
     _In_ ULONGLONG MatchAllKeyword,
-    _In_opt_ struct _EVENT_FILTER_DESCRIPTOR *FilterData,
+    _In_opt_ PEVENT_FILTER_DESCRIPTOR FilterData,
     _Inout_opt_ PVOID CallbackContext
     );
 

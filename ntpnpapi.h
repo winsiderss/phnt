@@ -1,12 +1,7 @@
 /*
- * This file is part of the Process Hacker project - https://processhacker.sourceforge.io/
+ * Plug and Play support functions
  *
- * You can redistribute this file and/or modify it under the terms of the 
- * Attribution 4.0 International (CC BY 4.0) license. 
- * 
- * You must give appropriate credit, provide a link to the license, and 
- * indicate if changes were made. You may do so in any reasonable manner, but 
- * not in any way that suggests the licensor endorses you or your use.
+ * This file is part of System Informer.
  */
 
 #ifndef _NTPNPAPI_H
@@ -109,6 +104,48 @@ typedef enum _PLUGPLAY_CONTROL_CLASS
     PlugPlayControlGetDeviceInterfaceEnabled, // PLUGPLAY_CONTROL_DEVICE_INTERFACE_ENABLED
     MaxPlugPlayControl
 } PLUGPLAY_CONTROL_CLASS, *PPLUGPLAY_CONTROL_CLASS;
+
+// pub
+typedef enum _DEVICE_RELATION_TYPE
+{
+    BusRelations,
+    EjectionRelations,
+    PowerRelations,
+    RemovalRelations,
+    TargetDeviceRelation,
+    SingleBusRelations,
+    TransportRelations
+} DEVICE_RELATION_TYPE, *PDEVICE_RELATION_TYPE;
+
+// pub
+typedef enum _BUS_QUERY_ID_TYPE
+{
+    BusQueryDeviceID = 0,           // <Enumerator>\<Enumerator-specific device id>
+    BusQueryHardwareIDs = 1,        // Hardware ids
+    BusQueryCompatibleIDs = 2,      // compatible device ids
+    BusQueryInstanceID = 3,         // persistent id for this instance of the device
+    BusQueryDeviceSerialNumber = 4, // serial number for this device
+    BusQueryContainerID = 5         // unique id of the device's physical container
+} BUS_QUERY_ID_TYPE, *PBUS_QUERY_ID_TYPE;
+
+// pub
+typedef enum _DEVICE_TEXT_TYPE
+{
+    DeviceTextDescription = 0,        // DeviceDesc property
+    DeviceTextLocationInformation = 1 // DeviceLocation property
+} DEVICE_TEXT_TYPE, *PDEVICE_TEXT_TYPE;
+
+// pub
+typedef enum _DEVICE_USAGE_NOTIFICATION_TYPE
+{
+    DeviceUsageTypeUndefined,
+    DeviceUsageTypePaging,
+    DeviceUsageTypeHibernation,
+    DeviceUsageTypeDumpFile,
+    DeviceUsageTypeBoot,
+    DeviceUsageTypePostDisplay,
+    DeviceUsageTypeGuestAssigned
+} DEVICE_USAGE_NOTIFICATION_TYPE, *PDEVICE_USAGE_NOTIFICATION_TYPE;
 
 #if (PHNT_VERSION < PHNT_WIN8)
 NTSYSCALLAPI
