@@ -11,8 +11,23 @@ EXTERN_C_START
 
 #ifndef _TRACEHANDLE_DEFINED
 #define _TRACEHANDLE_DEFINED
+// Obsolete - prefer PROCESSTRACE_HANDLE or CONTROLTRACE_ID.
 typedef ULONG64 TRACEHANDLE, *PTRACEHANDLE;
 #endif
+
+// Used to read the events from a trace file or real-time trace session (via
+// ProcessTrace). The handle is invalid if it contains the value
+// INVALID_PROCESSTRACE_HANDLE. Obtain the handle by calling an OpenTrace
+// function (e.g.  OpenTrace, OpenTraceFromFile, OpenTraceFromRealTimeLogger).
+// Close the handle by calling CloseTrace.
+typedef ULONG64 PROCESSTRACE_HANDLE;
+
+// Used to identify a trace collection session. The id is invalid if it
+// contains the value (CONTROLTRACE_ID)0. Obtain the id from StartTrace or from
+// the Wnode.HistoricalContext field of the EVENT_TRACE_PROPERTIES returned by
+// ControlTrace(0, sessionName, ...). The id is valid until the trace stops and
+// does not need to be closed by the user.
+typedef ULONG64 CONTROLTRACE_ID;
 
 //
 // Maximum supported buffer size in KB - Win8 (16MB)
@@ -2832,7 +2847,7 @@ typedef struct _HEAP_SUBSEGMENT_INIT
 #include <poppack.h>
 
 #include <pshpack1.h>
-typedef struct _HEAP_AFINITY_MANAGER_ENABLE
+typedef struct _HEAP_AFFINITY_MANAGER_ENABLE
 {
     SYSTEM_TRACE_HEADER Header;
     PVOID HeapHandle;
@@ -5432,32 +5447,6 @@ typedef struct _ETW_UMGL_KEY
 #define MEMORY_FROM_SLOWPATH                    4       //Activity from Slow C
 #define MEMORY_FROM_INVALID                     5
 #define MEMORY_FROM_SEGMENT_HEAP                6       //Activity from segment heap.
-
-//
-// Header preparation macro for UMGL
-//
-#define TRACE_HEADER_TYPE_SYSTEM32          1
-#define TRACE_HEADER_TYPE_SYSTEM64          2
-#define TRACE_HEADER_TYPE_COMPACT32         3
-#define TRACE_HEADER_TYPE_COMPACT64         4
-#define TRACE_HEADER_TYPE_FULL_HEADER32     10
-#define TRACE_HEADER_TYPE_INSTANCE32        11
-#define TRACE_HEADER_TYPE_TIMED             12  // Not used
-#define TRACE_HEADER_TYPE_ERROR             13  // Error while logging event
-#define TRACE_HEADER_TYPE_WNODE_HEADER      14  // Not used
-#define TRACE_HEADER_TYPE_MESSAGE           15
-#define TRACE_HEADER_TYPE_PERFINFO32        16
-#define TRACE_HEADER_TYPE_PERFINFO64        17
-#define TRACE_HEADER_TYPE_EVENT_HEADER32    18
-#define TRACE_HEADER_TYPE_EVENT_HEADER64    19
-#define TRACE_HEADER_TYPE_FULL_HEADER64     20
-#define TRACE_HEADER_TYPE_INSTANCE64        21
-
-#define EVENT_HEADER_SIZE_MASK              0x0000FFFF
-
-#define SYSTEM_TRACE_VERSION                 2
-
-#define TRACE_HEADER_FLAG                   0x80000000
 
 #define EVENT_HEADER_EVENT64      ((USHORT)(((TRACE_HEADER_FLAG | TRACE_HEADER_EVENT_TRACE) >> 16) | TRACE_HEADER_TYPE_EVENT_HEADER64))
 #define EVENT_HEADER_EVENT32      ((USHORT)(((TRACE_HEADER_FLAG | TRACE_HEADER_EVENT_TRACE) >> 16) | TRACE_HEADER_TYPE_EVENT_HEADER32))

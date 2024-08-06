@@ -219,12 +219,12 @@ typedef enum _PROCESSINFOCLASS
     ProcessAssignCpuPartitions,
     ProcessPriorityClassEx, // s: PROCESS_PRIORITY_CLASS_EX
     ProcessMembershipInformation, // q: PROCESS_MEMBERSHIP_INFORMATION
-    ProcessEffectiveIoPriority, // q: IO_PRIORITY_HINT
+    ProcessEffectiveIoPriority, // q: IO_PRIORITY_HINT // 110
     ProcessEffectivePagePriority, // q: ULONG
     ProcessSchedulerSharedData, // since 24H2
     ProcessSlistRollbackInformation,
     ProcessNetworkIoCounters, // q: PROCESS_NETWORK_COUNTERS
-    ProcessFindFirstThreadByTebValue,
+    ProcessFindFirstThreadByTebValue, // PROCESS_TEB_VALUE_INFORMATION
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 #endif
@@ -289,7 +289,7 @@ typedef enum _THREADINFOCLASS
     ThreadEffectiveIoPriority, // q: IO_PRIORITY_HINT
     ThreadEffectivePagePriority, // q: ULONG
     ThreadUpdateLockOwnership, // since 24H2
-    ThreadSchedulerSharedDataSlot,
+    ThreadSchedulerSharedDataSlot, // SCHEDULER_SHARED_DATA_SLOT_INFORMATION
     ThreadTebInformationAtomic, // THREAD_TEB_INFORMATION
     ThreadIndexInformation, // THREAD_INDEX_INFORMATION
     MaxThreadInfoClass
@@ -336,7 +336,8 @@ typedef struct _PROCESS_EXTENDED_BASIC_INFORMATION
             ULONG IsStronglyNamed : 1;
             ULONG IsSecureProcess : 1;
             ULONG IsSubsystemProcess : 1;
-            ULONG SpareBits : 23;
+            ULONG IsTrustedApp : 1; // since 24H2
+            ULONG SpareBits : 22;
         };
     };
 } PROCESS_EXTENDED_BASIC_INFORMATION, *PPROCESS_EXTENDED_BASIC_INFORMATION;
@@ -438,7 +439,15 @@ typedef struct _PROCESS_WS_WATCH_INFORMATION
 // psapi:PSAPI_WS_WATCH_INFORMATION_EX
 typedef struct _PROCESS_WS_WATCH_INFORMATION_EX
 {
-    PROCESS_WS_WATCH_INFORMATION BasicInfo;
+    union
+    {
+        PROCESS_WS_WATCH_INFORMATION BasicInfo;
+        struct
+        {
+            PVOID FaultingPc;
+            PVOID FaultingVa;
+        };
+    };
     ULONG_PTR FaultingThreadId;
     ULONG_PTR Flags;
 } PROCESS_WS_WATCH_INFORMATION_EX, *PPROCESS_WS_WATCH_INFORMATION_EX;
@@ -683,9 +692,6 @@ typedef struct _PROCESS_MITIGATION_REDIRECTION_TRUST_POLICY
 #endif
 
 #if !defined(NTDDI_WIN10_NI) || (NTDDI_VERSION < NTDDI_WIN10_NI)
-#define ProcessUserPointerAuthPolicy 17
-#define ProcessSEHOPPolicy 18
-
 typedef struct _PROCESS_MITIGATION_USER_POINTER_AUTH_POLICY {
     union {
         ULONG Flags;
@@ -706,6 +712,43 @@ typedef struct _PROCESS_MITIGATION_SEHOP_POLICY {
     };
 } PROCESS_MITIGATION_SEHOP_POLICY, *PPROCESS_MITIGATION_SEHOP_POLICY;
 #endif
+
+typedef struct _PROCESS_MITIGATION_ACTIVATION_CONTEXT_TRUST_POLICY2
+{
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG AssemblyManifestRedirectionTrust : 1;
+            ULONG ReservedFlags : 31;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME;
+} PROCESS_MITIGATION_ACTIVATION_CONTEXT_TRUST_POLICY2, *PPROCESS_MITIGATION_ACTIVATION_CONTEXT_TRUST_POLICY2;
+
+// enum PROCESS_MITIGATION_POLICY
+#define PROCESS_MITIGATION_POLICY ULONG
+#define ProcessDEPPolicy 0
+#define ProcessASLRPolicy 1
+#define ProcessDynamicCodePolicy 2
+#define ProcessStrictHandleCheckPolicy 3
+#define ProcessSystemCallDisablePolicy 4
+#define ProcessMitigationOptionsMask 5
+#define ProcessExtensionPointDisablePolicy 6
+#define ProcessControlFlowGuardPolicy 7
+#define ProcessSignaturePolicy 8
+#define ProcessFontDisablePolicy 9
+#define ProcessImageLoadPolicy 10
+#define ProcessSystemCallFilterPolicy 11
+#define ProcessPayloadRestrictionPolicy 12
+#define ProcessChildProcessPolicy 13
+#define ProcessSideChannelIsolationPolicy 14
+#define ProcessUserShadowStackPolicy 15
+#define ProcessRedirectionTrustPolicy 16
+#define ProcessUserPointerAuthPolicy 17
+#define ProcessSEHOPPolicy 18
+#define ProcessActivationContextTrustPolicy 19
+#define MaxProcessMitigationPolicy 20
 
 typedef struct _PROCESS_MITIGATION_POLICY_INFORMATION
 {
@@ -1058,10 +1101,17 @@ typedef struct _PROCESS_MEMBERSHIP_INFORMATION
 #if !defined(NTDDI_WIN11_GE) || (NTDDI_VERSION < NTDDI_WIN11_GE)
 typedef struct _PROCESS_NETWORK_COUNTERS
 {
-    ULONG_PTR BytesIn;
-    ULONG_PTR BytesOut;
+    ULONG64 BytesIn;
+    ULONG64 BytesOut;
 } PROCESS_NETWORK_COUNTERS, *PPROCESS_NETWORK_COUNTERS;
 #endif
+
+typedef struct _PROCESS_TEB_VALUE_INFORMATION
+{
+    ULONG ThreadId;
+    ULONG TebOffset;
+    ULONG_PTR Value;
+} PROCESS_TEB_VALUE_INFORMATION, *PPROCESS_TEB_VALUE_INFORMATION;
 
 // end_private
 
@@ -1103,6 +1153,20 @@ typedef struct _THREAD_CYCLE_TIME_INFORMATION
     ULONGLONG AccumulatedCycles;
     ULONGLONG CurrentCycleCount;
 } THREAD_CYCLE_TIME_INFORMATION, *PTHREAD_CYCLE_TIME_INFORMATION;
+
+typedef enum _SCHEDULER_SHARED_DATA_SLOT_ACTION
+{
+    SchedulerSharedSlotAssign,
+    SchedulerSharedSlotFree,
+    SchedulerSharedSlotQuery
+} SCHEDULER_SHARED_DATA_SLOT_ACTION;
+
+typedef struct _SCHEDULER_SHARED_DATA_SLOT_INFORMATION
+{
+    SCHEDULER_SHARED_DATA_SLOT_ACTION Action;
+    PVOID SchedulerSharedDataHandle;
+    PVOID Slot;
+} SCHEDULER_SHARED_DATA_SLOT_INFORMATION, *PSCHEDULER_SHARED_DATA_SLOT_INFORMATION;
 
 typedef struct _THREAD_TEB_INFORMATION
 {
@@ -1370,6 +1434,8 @@ NtCreateProcess(
 #define PROCESS_CREATE_FLAGS_AUXILIARY_PROCESS 0x00008000 // NtCreateProcessEx & NtCreateUserProcess, requires SeTcb
 #define PROCESS_CREATE_FLAGS_CREATE_STORE 0x00020000 // NtCreateProcessEx & NtCreateUserProcess
 #define PROCESS_CREATE_FLAGS_USE_PROTECTED_ENVIRONMENT 0x00040000 // NtCreateProcessEx & NtCreateUserProcess
+#define PROCESS_CREATE_FLAGS_IMAGE_EXPANSION_MITIGATION_DISABLE 0x00080000
+#define PROCESS_CREATE_FLAGS_PARTITION_CREATE_SLAB_IDENTITY 0x00400000 // NtCreateProcessEx & NtCreateUserProcess, requires SeLockMemoryPrivilege
 // end_rev
 
 NTSYSCALLAPI
@@ -1991,7 +2057,7 @@ typedef enum _PS_ATTRIBUTE_NUM
     PsAttributeComponentFilter,
     PsAttributeEnableOptionalXStateFeatures, // since WIN11
     PsAttributeSupportedMachines, // since 24H2
-    PsAttributeSveVectorLength,
+    PsAttributeSveVectorLength, // PPS_PROCESS_CREATION_SVE_VECTOR_LENGTH
     PsAttributeMax
 } PS_ATTRIBUTE_NUM;
 
@@ -2182,6 +2248,13 @@ typedef struct _PS_BNO_ISOLATION_PARAMETERS
 } PS_BNO_ISOLATION_PARAMETERS, *PPS_BNO_ISOLATION_PARAMETERS;
 
 // private
+typedef union _PS_PROCESS_CREATION_SVE_VECTOR_LENGTH
+{
+    ULONG VectorLength : 24;
+    ULONG FlagsReserved : 8;
+} PS_PROCESS_CREATION_SVE_VECTOR_LENGTH, *PPS_PROCESS_CREATION_SVE_VECTOR_LENGTH;
+
+// private
 typedef enum _PS_MITIGATION_OPTION
 {
     PS_MITIGATION_OPTION_NX,
@@ -2338,9 +2411,9 @@ NtCreateUserProcess(
 #define THREAD_CREATE_FLAGS_CREATE_SUSPENDED 0x00000001 // NtCreateUserProcess & NtCreateThreadEx
 #define THREAD_CREATE_FLAGS_SKIP_THREAD_ATTACH 0x00000002 // NtCreateThreadEx only
 #define THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER 0x00000004 // NtCreateThreadEx only
-#define THREAD_CREATE_FLAGS_LOADER_WORKER 0x00000010 // NtCreateThreadEx only
-#define THREAD_CREATE_FLAGS_SKIP_LOADER_INIT 0x00000020 // NtCreateThreadEx only
-#define THREAD_CREATE_FLAGS_BYPASS_PROCESS_FREEZE 0x00000040 // NtCreateThreadEx only
+#define THREAD_CREATE_FLAGS_LOADER_WORKER 0x00000010 // NtCreateThreadEx only, since THRESHOLD
+#define THREAD_CREATE_FLAGS_SKIP_LOADER_INIT 0x00000020 // NtCreateThreadEx only, since REDSTONE2
+#define THREAD_CREATE_FLAGS_BYPASS_PROCESS_FREEZE 0x00000040 // NtCreateThreadEx only, since 19H1
 // end_rev
 
 #if (PHNT_VERSION >= PHNT_VISTA)
@@ -2425,8 +2498,8 @@ NtCreateThreadEx(
 #define JobObjectThreadImpersonationInformation 47
 #define JobObjectIoPriorityLimit 48 // JOBOBJECT_IO_PRIORITY_LIMIT
 #define JobObjectPagePriorityLimit 49 // JOBOBJECT_PAGE_PRIORITY_LIMIT
-#define JobObjectServerSiloDiagnosticInformation 50 // since 24H2
-#define JobObjectNetworkAccountingInformation 51
+#define JobObjectServerSiloDiagnosticInformation 50 // SERVERSILO_DIAGNOSTIC_INFORMATION // since 24H2
+#define JobObjectNetworkAccountingInformation 51 // JOBOBJECT_NETWORK_ACCOUNTING_INFORMATION
 #define MaxJobObjectInfoClass 52
 
 // rev // extended limit v2
@@ -2603,6 +2676,22 @@ typedef struct _JOBOBJECT_PAGE_PRIORITY_LIMIT
     JOBOBJECT_PAGE_PRIORITY_LIMIT_FLAGS Flags;
     ULONG Priority;
 } JOBOBJECT_PAGE_PRIORITY_LIMIT, *PJOBOBJECT_PAGE_PRIORITY_LIMIT;
+
+#if !defined(NTDDI_WIN11_GE) || (NTDDI_VERSION < NTDDI_WIN11_GE)
+// private
+typedef struct _SERVERSILO_DIAGNOSTIC_INFORMATION
+{
+    NTSTATUS ExitStatus;
+    WCHAR CriticalProcessName[15];
+} SERVERSILO_DIAGNOSTIC_INFORMATION, *PSERVERSILO_DIAGNOSTIC_INFORMATION;
+
+// private
+typedef struct _JOBOBJECT_NETWORK_ACCOUNTING_INFORMATION
+{
+    ULONG64 DataBytesIn;
+    ULONG64 DataBytesOut;
+} JOBOBJECT_NETWORK_ACCOUNTING_INFORMATION, *PJOBOBJECT_NETWORK_ACCOUNTING_INFORMATION;
+#endif
 
 NTSYSCALLAPI
 NTSTATUS

@@ -721,6 +721,7 @@ NTSTATUS
 NTAPI
 NtCreateIRTimer(
     _Out_ PHANDLE TimerHandle,
+    _In_ PVOID Reserved,
     _In_ ACCESS_MASK DesiredAccess
     );
 
@@ -1559,9 +1560,9 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemFlags2Information, // q: SYSTEM_FLAGS_INFORMATION
     SystemSecurityModelInformation, // SYSTEM_SECURITY_MODEL_INFORMATION // since 19H1
     SystemCodeIntegritySyntheticCacheInformation,
-    SystemFeatureConfigurationInformation, // SYSTEM_FEATURE_CONFIGURATION_INFORMATION // since 20H1 // 210
-    SystemFeatureConfigurationSectionInformation, // SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION
-    SystemFeatureUsageSubscriptionInformation, // SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS
+    SystemFeatureConfigurationInformation, // q: in: SYSTEM_FEATURE_CONFIGURATION_QUERY, out: SYSTEM_FEATURE_CONFIGURATION_INFORMATION; s: SYSTEM_FEATURE_CONFIGURATION_UPDATE // NtQuerySystemInformationEx // since 20H1 // 210
+    SystemFeatureConfigurationSectionInformation, // q: in: SYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST, out: SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION // NtQuerySystemInformationEx
+    SystemFeatureUsageSubscriptionInformation, // q: SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS; s: SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE
     SystemSecureSpeculationControlInformation, // SECURE_SPECULATION_CONTROL_INFORMATION
     SystemSpacesBootInformation, // since 20H2
     SystemFwRamdiskInformation, // SYSTEM_FIRMWARE_RAMDISK_INFORMATION
@@ -1588,14 +1589,14 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemPointerAuthInformation, // SYSTEM_POINTER_AUTH_INFORMATION
     SystemSecureKernelDebuggerInformation,
     SystemOriginalImageFeatureInformation, // q: in: SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_INPUT, out: SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_OUTPUT // NtQuerySystemInformationEx
-    SystemMemoryNumaInformation,
-    SystemMemoryNumaPerformanceInformation, // SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT, SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT // since 24H2 // 240
+    SystemMemoryNumaInformation, // SYSTEM_MEMORY_NUMA_INFORMATION_INPUT, SYSTEM_MEMORY_NUMA_INFORMATION_OUTPUT 
+    SystemMemoryNumaPerformanceInformation, // SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUTSYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT, SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT // since 24H2 // 240
     SystemCodeIntegritySignedPoliciesFullInformation,
     SystemSecureSecretsInformation,
     SystemTrustedAppsRuntimeInformation, // SYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION
     SystemBadPageInformationEx, // SYSTEM_BAD_PAGE_INFORMATION
-    SystemResourceDeadlockTimeout,
-    SystemBreakOnContextUnwindFailureInformation,
+    SystemResourceDeadlockTimeout, // ULONG
+    SystemBreakOnContextUnwindFailureInformation, // ULONG (requires SeDebugPrivilege)
     SystemOslRamdiskInformation, // SYSTEM_OSL_RAMDISK_INFORMATION
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS;
@@ -3128,8 +3129,6 @@ typedef struct _SM_REGISTRATION_REQUEST
     SM_REGISTRATION_INFO RegInfo;
 } SM_REGISTRATION_REQUEST, *PSM_REGISTRATION_REQUEST;
 
-typedef struct _RTL_BITMAP *PRTL_BITMAP;
-
 #define SYSTEM_STORE_RESIZE_INFORMATION_VERSION 6
 
 typedef struct _SM_STORE_RESIZE_REQUEST
@@ -4158,10 +4157,18 @@ typedef struct _SYSTEM_CODEINTEGRITYVERIFICATION_INFORMATION
     PVOID Image;
 } SYSTEM_CODEINTEGRITYVERIFICATION_INFORMATION, *PSYSTEM_CODEINTEGRITYVERIFICATION_INFORMATION;
 
+// rev
+typedef struct _SYSTEM_HYPERVISOR_USER_SHARED_DATA
+{
+    ULONGLONG TimeUpdateLock; // QpcSystemTimeIncrement?
+    volatile ULONGLONG QpcMultiplier;
+    volatile ULONGLONG QpcBias; // HvlGetQpcBias
+} SYSTEM_HYPERVISOR_USER_SHARED_DATA, *PSYSTEM_HYPERVISOR_USER_SHARED_DATA;
+
 // private
 typedef struct _SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION
 {
-    PVOID HypervisorSharedUserVa;
+    PSYSTEM_HYPERVISOR_USER_SHARED_DATA HypervisorSharedUserVa;
 } SYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION, *PSYSTEM_HYPERVISOR_SHARED_PAGE_INFORMATION;
 
 // private
@@ -4269,45 +4276,6 @@ typedef struct _SYSTEM_SECURITY_MODEL_INFORMATION
         };
     };
 } SYSTEM_SECURITY_MODEL_INFORMATION, *PSYSTEM_SECURITY_MODEL_INFORMATION;
-
-typedef struct _RTL_FEATURE_CONFIGURATION *PRTL_FEATURE_CONFIGURATION; // from ntrtl.h
-
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_INFORMATION
-{
-    ULONGLONG ChangeStamp;
-    PRTL_FEATURE_CONFIGURATION Configuration;
-} SYSTEM_FEATURE_CONFIGURATION_INFORMATION, *PSYSTEM_FEATURE_CONFIGURATION_INFORMATION;
-
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY
-{
-    ULONGLONG ChangeStamp;
-    PVOID Section;
-    ULONGLONG Size;
-} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY, *PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY;
-
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION
-{
-    ULONGLONG OverallChangeStamp;
-    SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY Descriptors[3];
-} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION, *PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION;
-
-// private
-typedef struct _RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET
-{
-    ULONG Data[2];
-} RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET, *PRTL_FEATURE_USAGE_SUBSCRIPTION_TARGET;
-
-// private
-typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS
-{
-    ULONG FeatureId;
-    USHORT ReportingKind;
-    USHORT ReportingOptions;
-    RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET ReportingTarget;
-} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS, *PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS;
 
 // private
 typedef union _SECURE_SPECULATION_CONTROL_INFORMATION
@@ -4515,12 +4483,103 @@ typedef struct _SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_OUTPUT
 } SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_OUTPUT, *PSYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_OUTPUT;
 
 // private
+typedef struct _SYSTEM_MEMORY_NUMA_INFORMATION_INPUT
+{
+    ULONG Version;
+    ULONG TargetNodeNumber;
+    ULONG Flags;
+} SYSTEM_MEMORY_NUMA_INFORMATION_INPUT, *PSYSTEM_MEMORY_NUMA_INFORMATION_INPUT;
+
+// private
+typedef struct _SYSTEM_MEMORY_NUMA_INFORMATION_OUTPUT
+{
+    ULONG Version;
+    ULONG Size;
+    ULONG InitiatorNode;
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG IsAttached : 1;
+            ULONG Reserved : 31;
+        };
+    };
+} SYSTEM_MEMORY_NUMA_INFORMATION_OUTPUT, *PSYSTEM_MEMORY_NUMA_INFORMATION_OUTPUT;
+
+// private
+typedef enum _SYSTEM_MEMORY_NUMA_PERFORMANCE_QUERY_DATA_TYPES
+{
+    SystemMemoryNumaPerformanceQuery_ReadLatency,
+    SystemMemoryNumaPerformanceQuery_ReadBandwidth,
+    SystemMemoryNumaPerformanceQuery_WriteLatency,
+    SystemMemoryNumaPerformanceQuery_WriteBandwidth,
+    SystemMemoryNumaPerformanceQuery_Latency,
+    SystemMemoryNumaPerformanceQuery_Bandwidth,
+    SystemMemoryNumaPerformanceQuery_AllDataTypes,
+    SystemMemoryNumaPerformanceQuery_MaxDataType
+} SYSTEM_MEMORY_NUMA_PERFORMANCE_QUERY_DATA_TYPES;
+
+// private
+typedef struct _SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT
+{
+    ULONG Version;
+    ULONG TargetNodeNumber;
+    SYSTEM_MEMORY_NUMA_PERFORMANCE_QUERY_DATA_TYPES QueryDataType;
+    ULONG Flags;
+} SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT, *PSYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT;
+
+// private
+typedef struct _SYSTEM_MEMORY_NUMA_PERFORMANCE_ENTRY
+{
+    ULONG InitiatorNodeNumber;
+    ULONG TargetNodeNumber;
+    SYSTEM_MEMORY_NUMA_PERFORMANCE_QUERY_DATA_TYPES DataType;
+    union
+    {
+        BOOLEAN Flags;
+        struct
+        {
+            BOOLEAN MinTransferSizeToAchieveValues : 1;
+            BOOLEAN NonSequentialTransfers : 1;
+            BOOLEAN Reserved : 6;
+        };
+    };
+    ULONG_PTR MinTransferSizeInBytes;
+    ULONG_PTR EntryValue;
+} SYSTEM_MEMORY_NUMA_PERFORMANCE_ENTRY, *PSYSTEM_MEMORY_NUMA_PERFORMANCE_ENTRY;
+
+// private
+typedef struct _SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT
+{
+    ULONG Version;
+    ULONG Size;
+    ULONG EntryCount;
+    SYSTEM_MEMORY_NUMA_PERFORMANCE_ENTRY PerformanceEntries[1];
+} SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT, *PSYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT;
+
+// private
 typedef struct _SYSTEM_OSL_RAMDISK_ENTRY
 {
     ULONG BlockSize;
     ULONG_PTR BaseAddress;
     SIZE_T Size;
 } SYSTEM_OSL_RAMDISK_ENTRY, *PSYSTEM_OSL_RAMDISK_ENTRY;
+
+// private
+typedef struct _SYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION
+{
+    union
+    {
+        ULONGLONG Flags;
+        struct
+        {
+            ULONGLONG Supported : 1;
+            ULONGLONG Spare : 63;
+        };
+    };
+    PVOID RemoteBreakingRoutine;
+} SYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION, *PSYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION;
 
 // private
 typedef struct _SYSTEM_OSL_RAMDISK_INFORMATION
@@ -4976,6 +5035,7 @@ typedef struct _KUSER_SHARED_DATA
     //
 
     ULONG TimeZoneId;
+
     ULONG LargePageMinimum;
 
     //
@@ -5149,7 +5209,10 @@ typedef struct _KUSER_SHARED_DATA
 
     //
     // Number of physical pages in the system. This can dynamically change as
-    // physical memory can be added or removed from a running system.
+    // physical memory can be added or removed from a running system.  This
+    // cell is too small to hold the non-truncated value on very large memory
+    // machines so code that needs the full value should access
+    // FullNumberOfPhysicalPages instead.
     //
 
     ULONG NumberOfPhysicalPages;
@@ -5221,7 +5284,9 @@ typedef struct _KUSER_SHARED_DATA
             ULONG DbgMultiSessionSku        : 1;
             ULONG DbgMultiUsersInSessionSku : 1;
             ULONG DbgStateSeparationEnabled : 1;
-            ULONG SpareBits                 : 21;
+            ULONG DbgSplitTokenEnabled      : 1;
+            ULONG DbgShadowAdminEnabled     : 1;
+            ULONG SpareBits                 : 19;
         } DUMMYSTRUCTNAME2;
     } DUMMYUNIONNAME2;
 
@@ -5235,6 +5300,7 @@ typedef struct _KUSER_SHARED_DATA
     //
 
     ULONGLONG TestRetInstruction;
+
     LONGLONG QpcFrequency;
 
     //
@@ -5251,7 +5317,9 @@ typedef struct _KUSER_SHARED_DATA
     ULONG Reserved2;
 
     //
-    //
+    // Full 64 bit version of the number of physical pages in the system.
+    // This can dynamically change as physical memory can be added or removed
+    // from a running system.
     //
 
     ULONGLONG FullNumberOfPhysicalPages;
@@ -5423,18 +5491,18 @@ typedef struct _KUSER_SHARED_DATA
         struct
         {
             //
-            // A boolean indicating whether performance counter queries
-            // can read the counter directly (bypassing the system call).
+            // A bitfield indicating whether performance counter queries can
+            // read the counter directly (bypassing the system call) and flags.
             //
 
             volatile UCHAR QpcBypassEnabled;
 
             //
-            // Shift applied to the raw counter value to derive the
-            // QPC count.
+            // Reserved, leave as zero for backward compatibility. Was shift
+            // applied to the raw counter value to derive QPC count.
             //
 
-            UCHAR QpcShift;
+            UCHAR QpcReserved;
         };
     };
 
@@ -5442,7 +5510,7 @@ typedef struct _KUSER_SHARED_DATA
     LARGE_INTEGER TimeZoneBiasEffectiveEnd;
 
     //
-    // Extended processor state configuration
+    // Extended processor state configuration (AMD64 and x86).
     //
 
     XSTATE_CONFIGURATION XState;
@@ -5452,7 +5520,16 @@ typedef struct _KUSER_SHARED_DATA
 
     ULONG64 UserPointerAuthMask;
 
-    ULONG InternsReserved[210];
+    //
+    // Extended processor state configuration (ARM64). The reserved space for
+    // other architectures is not available for reuse.
+    //
+
+#if defined(_ARM64_)
+    XSTATE_CONFIGURATION XStateArm64;
+#else
+    ULONG Reserved10[210];
+#endif
 } KUSER_SHARED_DATA, *PKUSER_SHARED_DATA;
 
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TickCountLowDeprecated) == 0x0);
@@ -5532,7 +5609,7 @@ C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, ActiveGroupCount) == 0x3c4);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved9) == 0x3c5);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, QpcData) == 0x3c6);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, QpcBypassEnabled) == 0x3c6);
-C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, QpcShift) == 0x3c7);
+C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, QpcReserved) == 0x3c7);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TimeZoneBiasEffectiveStart) == 0x3c8);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, TimeZoneBiasEffectiveEnd) == 0x3d0);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XState) == 0x3d8);
@@ -5545,6 +5622,11 @@ C_ASSERT(sizeof(KUSER_SHARED_DATA) == 0x728);
 #else
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, FeatureConfigurationChangeStamp) == 0x720);
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, UserPointerAuthMask) == 0x730);
+#if defined(_ARM64_)
+C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XStateArm64) == 0x738);
+#else
+C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x738);
+#endif
 #if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
 C_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xa80);
 #endif
