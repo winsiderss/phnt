@@ -1258,18 +1258,20 @@ RtlWakeAddressSingle(
 // end_rev
 
 #if (PHNT_VERSION >= PHNT_WIN11_22H2)
+#ifdef _RTL_VOL_MEM_ACCESSORS_
 FORCEINLINE
-VOID
-NTAPI
+volatile void*
+__cdecl
 RtlCopyVolatileMemory(
-    _Out_writes_bytes_(Size) VOID *Destination,
-    _In_reads_bytes_(Size) volatile const VOID *Source,
-    _In_ SIZE_T Size
+    _Out_writes_bytes_all_(Length) volatile void* Destination,
+    _In_reads_bytes_(Length) volatile const void* Source,
+    _In_ size_t Length
     )
 {
-    RtlCopyMemory(Destination, (const VOID *)Source, Size);
+    RtlCopyMemory((VOID*)Destination, (const VOID *)Source, Length);
     BarrierAfterRead();
 }
+#endif
 #endif
 
 FORCEINLINE
