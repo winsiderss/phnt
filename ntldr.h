@@ -141,9 +141,9 @@ typedef struct _LDRP_LOAD_CONTEXT *PLDRP_LOAD_CONTEXT;
 // symbols
 typedef struct _LDR_DATA_TABLE_ENTRY
 {
-    LIST_ENTRY InLoadOrderLinks;
-    LIST_ENTRY InMemoryOrderLinks;
-    LIST_ENTRY InInitializationOrderLinks;
+    LIST_ENTRY InLoadOrderModuleList;
+    LIST_ENTRY InMemoryOrderModuleList;
+    LIST_ENTRY InInitializationOrderModuleList;
     PVOID DllBase;
     PLDR_INIT_ROUTINE EntryPoint;
     ULONG SizeOfImage;

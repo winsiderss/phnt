@@ -108,8 +108,8 @@ typedef struct _LDR_DDAG_NODE32
 
 typedef struct _LDR_DATA_TABLE_ENTRY32
 {
-    LIST_ENTRY32 InLoadOrderLinks;
-    LIST_ENTRY32 InMemoryOrderLinks;
+    LIST_ENTRY32 InLoadOrderModuleList;
+    LIST_ENTRY32 InMemoryOrderModuleList;
     union
     {
         LIST_ENTRY32 InInitializationOrderLinks;
