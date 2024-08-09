@@ -55,6 +55,12 @@ typedef PCSTR PCSZ;
 
 typedef PVOID* PPVOID;
 
+// Limits
+
+#define MAXUCHAR 0xff
+#define MAXUSHORT 0xffff
+#define MAXULONG 0xffffffff
+
 // Specific
 
 typedef UCHAR KIRQL, *PKIRQL;
