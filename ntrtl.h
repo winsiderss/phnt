@@ -1257,31 +1257,6 @@ RtlWakeAddressSingle(
 
 // end_rev
 
-#if (PHNT_VERSION >= PHNT_WIN11_22H2)
-FORCEINLINE
-VOID
-NTAPI
-RtlCopyVolatileMemory(
-    _Out_writes_bytes_(Size) VOID *Destination,
-    _In_reads_bytes_(Size) volatile const VOID *Source,
-    _In_ SIZE_T Size
-    )
-{
-    RtlCopyMemory(Destination, (const VOID *)Source, Size);
-    BarrierAfterRead();
-}
-#endif
-
-FORCEINLINE
-HANDLE
-NTAPI
-RtlReadHandleNoFence(
-    _In_reads_bytes_(sizeof(HANDLE)) volatile CONST HANDLE *Address
-    )
-{
-    return (HANDLE)ReadPointerNoFence((PVOID *)Address);
-}
-
 // Strings
 
 FORCEINLINE
