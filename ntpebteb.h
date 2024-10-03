@@ -12,7 +12,7 @@ typedef struct _RTL_CRITICAL_SECTION *PRTL_CRITICAL_SECTION;
 typedef struct _SILO_USER_SHARED_DATA *PSILO_USER_SHARED_DATA;
 typedef struct _LEAP_SECOND_DATA *PLEAP_SECOND_DATA;
 
-#include <ntsxs.h>
+#include "ntsxs.h"
 
 // private
 #define KACF_OLDGETSHORTPATHNAME 0x00000001

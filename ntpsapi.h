@@ -104,7 +104,7 @@ typedef struct _WOW64_PROCESS
     PVOID Wow64;
 } WOW64_PROCESS, *PWOW64_PROCESS;
 
-#include <ntpebteb.h>
+#include "ntpebteb.h"
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
 typedef enum _PROCESSINFOCLASS
