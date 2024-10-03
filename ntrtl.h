@@ -10582,7 +10582,7 @@ FORCEINLINE
 VOID
 NTAPI
 RtlDeleteBoundaryDescriptor(
-    _In_ _Post_invalid_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
+    _In_ _Post_invalid_ PVOID BoundaryDescriptor
     )
 {
     RtlFreeHeap(RtlProcessHeap(), 0, BoundaryDescriptor);

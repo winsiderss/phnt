@@ -1123,6 +1123,7 @@ ZwCreatePort(
     _In_opt_ ULONG MaxPoolUsage
     );
 
+#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -1132,6 +1133,7 @@ ZwCreatePrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -2535,6 +2537,7 @@ ZwOpenPartition(
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
     );
 
+#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -2544,6 +2547,7 @@ ZwOpenPrivateNamespace(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -4721,6 +4725,7 @@ ZwWaitForSingleObject(
     _In_opt_ PLARGE_INTEGER Timeout
     );
 
+#if (PHNT_VERSION >= PHNT_WIN8)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -4731,6 +4736,7 @@ ZwWaitForWorkViaWorkerFactory(
     _Out_ PULONG PacketsReturned,
     _In_ PWORKER_FACTORY_DEFERRED_WORK DeferredWork
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
