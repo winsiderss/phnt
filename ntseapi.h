@@ -7,7 +7,9 @@
 #ifndef _NTSEAPI_H
 #define _NTSEAPI_H
 
+//
 // Privileges
+//
 
 #define SE_MIN_WELL_KNOWN_PRIVILEGE (2L)
 #define SE_CREATE_TOKEN_PRIVILEGE (2L)
@@ -48,7 +50,9 @@
 #define SE_DELEGATE_SESSION_USER_IMPERSONATE_PRIVILEGE (36L)
 #define SE_MAX_WELL_KNOWN_PRIVILEGE SE_DELEGATE_SESSION_USER_IMPERSONATE_PRIVILEGE
 
+//
 // Authz
+//
 
 // begin_rev
 
@@ -96,7 +100,7 @@ typedef enum _TOKEN_INFORMATION_CLASS
     TokenSecurityAttributes, // q; s: TOKEN_SECURITY_ATTRIBUTES_[AND_OPERATION_]INFORMATION (requires SeTcbPrivilege)
     TokenIsRestricted, // q: ULONG // 40
     TokenProcessTrustLevel, // q: TOKEN_PROCESS_TRUST_LEVEL // since WINBLUE
-    TokenPrivateNameSpace, // q; s: ULONG  (requires SeTcbPrivilege) // since THRESHOLD
+    TokenPrivateNameSpace, // q; s: ULONG (requires SeTcbPrivilege) // since THRESHOLD
     TokenSingletonAttributes, // q: TOKEN_SECURITY_ATTRIBUTES_INFORMATION // since REDSTONE
     TokenBnoIsolation, // q: TOKEN_BNO_ISOLATION_INFORMATION // since REDSTONE2
     TokenChildProcessFlags, // s: ULONG  (requires SeTcbPrivilege) // since REDSTONE3
@@ -149,7 +153,7 @@ typedef enum _TOKEN_INFORMATION_CLASS
 #define TokenSecurityAttributes 39 // q; s: TOKEN_SECURITY_ATTRIBUTES_[AND_OPERATION_]INFORMATION (requires SeTcbPrivilege)
 #define TokenIsRestricted 40 // q: ULONG // 40
 #define TokenProcessTrustLevel 41 // q: TOKEN_PROCESS_TRUST_LEVEL // since WINBLUE
-#define TokenPrivateNameSpace 42// q; s: ULONG  (requires SeTcbPrivilege) // since THRESHOLD
+#define TokenPrivateNameSpace 42// q; s: ULONG (requires SeTcbPrivilege) // since THRESHOLD
 #define TokenSingletonAttributes 43 // q: TOKEN_SECURITY_ATTRIBUTES_INFORMATION // since REDSTONE
 #define TokenBnoIsolation 44 // q: TOKEN_BNO_ISOLATION_INFORMATION // since REDSTONE2
 #define TokenChildProcessFlags 45 // s: ULONG  (requires SeTcbPrivilege) // since REDSTONE3
@@ -165,7 +169,11 @@ typedef enum _TOKEN_INFORMATION_CLASS
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_INVALID 0x00
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_INT64 0x01
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_UINT64 0x02
+// Case insensitive attribute value string by default.
+// Unless the flag TOKEN_SECURITY_ATTRIBUTE_VALUE_CASE_SENSITIVE
+// is set indicating otherwise.
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_STRING 0x03
+// Fully-qualified binary name.
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_FQBN 0x04
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_SID 0x05
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_BOOLEAN 0x06
@@ -173,13 +181,18 @@ typedef enum _TOKEN_INFORMATION_CLASS
 
 // Flags
 
+// Attribute must not be inherited across process spawns.
 #define TOKEN_SECURITY_ATTRIBUTE_NON_INHERITABLE 0x0001
+// Attribute value is compared in a case sensitive way. It is valid with string value
+// or composite type containing string value. For other types of value, this flag
+// will be ignored. Currently, it is valid with the two types:
+// TOKEN_SECURITY_ATTRIBUTE_TYPE_STRING and TOKEN_SECURITY_ATTRIBUTE_TYPE_FQBN.
 #define TOKEN_SECURITY_ATTRIBUTE_VALUE_CASE_SENSITIVE 0x0002
-#define TOKEN_SECURITY_ATTRIBUTE_USE_FOR_DENY_ONLY 0x0004
-#define TOKEN_SECURITY_ATTRIBUTE_DISABLED_BY_DEFAULT 0x0008
-#define TOKEN_SECURITY_ATTRIBUTE_DISABLED 0x0010
-#define TOKEN_SECURITY_ATTRIBUTE_MANDATORY 0x0020
-#define TOKEN_SECURITY_ATTRIBUTE_COMPARE_IGNORE 0x0040
+#define TOKEN_SECURITY_ATTRIBUTE_USE_FOR_DENY_ONLY 0x0004 // Attribute is considered only for Deny Aces.
+#define TOKEN_SECURITY_ATTRIBUTE_DISABLED_BY_DEFAULT 0x0008 // Attribute is disabled by default.
+#define TOKEN_SECURITY_ATTRIBUTE_DISABLED 0x0010 // Attribute is disabled.
+#define TOKEN_SECURITY_ATTRIBUTE_MANDATORY 0x0020 // Attribute is mandatory.
+#define TOKEN_SECURITY_ATTRIBUTE_COMPARE_IGNORE 0x0040 // Attribute is ignored.
 
 #define TOKEN_SECURITY_ATTRIBUTE_VALID_FLAGS ( \
     TOKEN_SECURITY_ATTRIBUTE_NON_INHERITABLE | \
@@ -189,22 +202,24 @@ typedef enum _TOKEN_INFORMATION_CLASS
     TOKEN_SECURITY_ATTRIBUTE_DISABLED | \
     TOKEN_SECURITY_ATTRIBUTE_MANDATORY)
 
+// Reserve upper 16 bits for custom flags. These should be preserved but not
+// validated as they do not affect security in any way.
 #define TOKEN_SECURITY_ATTRIBUTE_CUSTOM_FLAGS 0xffff0000
 
 // end_rev
 
-// private
+// private // CLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE
 typedef struct _TOKEN_SECURITY_ATTRIBUTE_FQBN_VALUE
 {
     ULONG64 Version;
     UNICODE_STRING Name;
 } TOKEN_SECURITY_ATTRIBUTE_FQBN_VALUE, *PTOKEN_SECURITY_ATTRIBUTE_FQBN_VALUE;
 
-// private
+// private // CLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE
 typedef struct _TOKEN_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE
 {
-    PVOID pValue;
-    ULONG ValueLength;
+    PVOID Value; // Pointer is BYTE aligned.
+    ULONG ValueLength; // In bytes
 } TOKEN_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE, *PTOKEN_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE;
 
 // private
@@ -224,6 +239,24 @@ typedef struct _TOKEN_SECURITY_ATTRIBUTE_V1
         PTOKEN_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE pOctetString;
     } Values;
 } TOKEN_SECURITY_ATTRIBUTE_V1, *PTOKEN_SECURITY_ATTRIBUTE_V1;
+
+// private
+typedef struct _TOKEN_SECURITY_ATTRIBUTE_RELATIVE_V1
+{
+    UNICODE_STRING Name;
+    USHORT ValueType;
+    USHORT Reserved;
+    ULONG Flags;
+    ULONG ValueCount;
+    union
+    {
+        ULONG pInt64[ANYSIZE_ARRAY];
+        ULONG pUint64[ANYSIZE_ARRAY];
+        ULONG ppString[ANYSIZE_ARRAY];
+        ULONG pFqbn[ANYSIZE_ARRAY];
+        ULONG pOctetString[ANYSIZE_ARRAY];
+    } Values;
+} TOKEN_SECURITY_ATTRIBUTE_RELATIVE_V1, *PTOKEN_SECURITY_ATTRIBUTE_RELATIVE_V1;
 
 // rev
 #define TOKEN_SECURITY_ATTRIBUTES_INFORMATION_VERSION_V1 1
@@ -265,7 +298,9 @@ typedef struct _TOKEN_PROCESS_TRUST_LEVEL
     PSID TrustLevelSid;
 } TOKEN_PROCESS_TRUST_LEVEL, *PTOKEN_PROCESS_TRUST_LEVEL;
 
+//
 // Tokens
+//
 
 NTSYSCALLAPI
 NTSTATUS
@@ -328,6 +363,15 @@ NtCreateTokenEx(
     );
 #endif
 
+/**
+ * The NtOpenProcessToken routine opens the access token associated with a process, and returns a handle that can be used to access that token.
+ *
+ * @param ProcessHandle Handle to the process whose access token is to be opened. The handle must have PROCESS_QUERY_INFORMATION access.
+ * @param DesiredAccess ACCESS_MASK structure specifying the requested types of access to the access token.
+ * @param TokenHandle Pointer to a caller-allocated variable that receives a handle to the newly opened access token.
+ * @return NTSTATUS Successful or errant status.
+ * @remarks https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntopenprocesstoken
+ */
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -337,6 +381,16 @@ NtOpenProcessToken(
     _Out_ PHANDLE TokenHandle
     );
 
+/**
+ * The NtOpenProcessTokenEx routine opens the access token associated with a process, and returns a handle that can be used to access that token.
+ *
+ * @param ProcessHandle Handle to the process whose access token is to be opened. The handle must have PROCESS_QUERY_INFORMATION access.
+ * @param DesiredAccess ACCESS_MASK structure specifying the requested types of access to the access token.
+ * @param HandleAttributes Attributes for the created handle. Only OBJ_KERNEL_HANDLE is currently supported.
+ * @param TokenHandle Pointer to a caller-allocated variable that receives a handle to the newly opened access token.
+ * @return NTSTATUS Successful or errant status.
+ * @remarks https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntopenprocesstokenex
+ */
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -347,6 +401,16 @@ NtOpenProcessTokenEx(
     _Out_ PHANDLE TokenHandle
     );
 
+/**
+ * The NtOpenThreadToken routine opens the access token associated with a thread, and returns a handle that can be used to access that token.
+ *
+ * @param ThreadHandle Handle to the thread whose access token is to be opened. The handle must have THREAD_QUERY_INFORMATION access.
+ * @param DesiredAccess ACCESS_MASK structure specifying the requested types of access to the access token.
+ * @param OpenAsSelf Boolean value specifying whether the access check is to be made against the security context of the thread calling NtOpenThreadToken or against the security context of the process for the calling thread.
+ * @param TokenHandle Pointer to a caller-allocated variable that receives a handle to the newly opened access token.
+ * @return NTSTATUS Successful or errant status.
+ * @remarks https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntopenthreadtoken
+ */
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -357,6 +421,17 @@ NtOpenThreadToken(
     _Out_ PHANDLE TokenHandle
     );
 
+/**
+ * The NtOpenThreadTokenEx routine opens the access token associated with a thread, and returns a handle that can be used to access that token.
+ *
+ * @param ThreadHandle Handle to the thread whose access token is to be opened. The handle must have THREAD_QUERY_INFORMATION access.
+ * @param DesiredAccess ACCESS_MASK structure specifying the requested types of access to the access token.
+ * @param OpenAsSelf Boolean value specifying whether the access check is to be made against the security context of the thread calling NtOpenThreadToken or against the security context of the process for the calling thread.
+ * @param HandleAttributes Attributes for the created handle. Only OBJ_KERNEL_HANDLE is currently supported.
+ * @param TokenHandle Pointer to a caller-allocated variable that receives a handle to the newly opened access token.
+ * @return NTSTATUS Successful or errant status.
+ * @remarks https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntopenthreadtokenex
+ */
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -368,6 +443,18 @@ NtOpenThreadTokenEx(
     _Out_ PHANDLE TokenHandle
     );
 
+/**
+ * The NtDuplicateToken function creates a handle to a new access token that duplicates an existing token.
+ *
+ * @param ExistingTokenHandle A handle to an existing access token that was opened with the TOKEN_DUPLICATE access right.
+ * @param DesiredAccess ACCESS_MASK structure specifying the requested types of access to the access token.
+ * @param ObjectAttributes Pointer to an OBJECT_ATTRIBUTES structure that describes the requested properties for the new token.
+ * @param EffectiveOnly A Boolean value that indicates whether the entire existing token should be duplicated into the new token or just the effective (currently enabled) part of the token.
+ * @param Type Specifies the type of token to create either a primary token or an impersonation token.
+ * @param NewTokenHandle Pointer to a caller-allocated variable that receives a handle to the newly duplicated token.
+ * @return NTSTATUS Successful or errant status.
+ * @remarks https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntduplicatetoken
+ */
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -602,8 +689,6 @@ NtGetCachedSigningLevel(
 
 #endif
 
-#if (PHNT_VERSION >= PHNT_REDSTONE)
-
 // rev
 typedef struct _SE_FILE_CACHE_CLAIM_INFORMATION
 {
@@ -618,6 +703,8 @@ typedef struct _SE_SET_FILE_CACHE_INFORMATION
     UNICODE_STRING CatalogDirectoryPath;
     SE_FILE_CACHE_CLAIM_INFORMATION OriginClaimInfo;
 } SE_SET_FILE_CACHE_INFORMATION, *PSE_SET_FILE_CACHE_INFORMATION;
+
+#if (PHNT_VERSION >= PHNT_REDSTONE)
 
 // rev
 NTSYSCALLAPI
