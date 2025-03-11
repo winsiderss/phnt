@@ -402,7 +402,45 @@ typedef struct _PEB
     //
     // Global flags for the system.
     //
-    ULONG NtGlobalFlag;
+    union
+    {
+        ULONG NtGlobalFlag;
+        struct
+        {
+            ULONG StopOnException : 1;          // FLG_STOP_ON_EXCEPTION
+            ULONG ShowLoaderSnaps : 1;          // FLG_SHOW_LDR_SNAPS
+            ULONG DebugInitialCommand : 1;      // FLG_DEBUG_INITIAL_COMMAND
+            ULONG StopOnHungGUI : 1;            // FLG_STOP_ON_HUNG_GUI
+            ULONG HeapEnableTailCheck : 1;      // FLG_HEAP_ENABLE_TAIL_CHECK
+            ULONG HeapEnableFreeCheck : 1;      // FLG_HEAP_ENABLE_FREE_CHECK
+            ULONG HeapValidateParameters : 1;   // FLG_HEAP_VALIDATE_PARAMETERS
+            ULONG HeapValidateAll : 1;          // FLG_HEAP_VALIDATE_ALL
+            ULONG ApplicationVerifier : 1;      // FLG_APPLICATION_VERIFIER
+            ULONG MonitorSilentProcessExit : 1; // FLG_MONITOR_SILENT_PROCESS_EXIT
+            ULONG PoolEnableTagging : 1;        // FLG_POOL_ENABLE_TAGGING
+            ULONG HeapEnableTagging : 1;        // FLG_HEAP_ENABLE_TAGGING
+            ULONG UserStackTraceDb : 1;         // FLG_USER_STACK_TRACE_DB
+            ULONG KernelStackTraceDb : 1;       // FLG_KERNEL_STACK_TRACE_DB
+            ULONG MaintainObjectTypeList : 1;   // FLG_MAINTAIN_OBJECT_TYPELIST
+            ULONG HeapEnableTagByDll : 1;       // FLG_HEAP_ENABLE_TAG_BY_DLL
+            ULONG DisableStackExtension : 1;    // FLG_DISABLE_STACK_EXTENSION
+            ULONG EnableCsrDebug : 1;           // FLG_ENABLE_CSRDEBUG
+            ULONG EnableKDebugSymbolLoad : 1;   // FLG_ENABLE_KDEBUG_SYMBOL_LOAD
+            ULONG DisablePageKernelStacks : 1;  // FLG_DISABLE_PAGE_KERNEL_STACKS
+            ULONG EnableSystemCritBreaks : 1;   // FLG_ENABLE_SYSTEM_CRIT_BREAKS
+            ULONG HeapDisableCoalescing : 1;    // FLG_HEAP_DISABLE_COALESCING
+            ULONG EnableCloseExceptions : 1;    // FLG_ENABLE_CLOSE_EXCEPTIONS
+            ULONG EnableExceptionLogging : 1;   // FLG_ENABLE_EXCEPTION_LOGGING
+            ULONG EnableHandleTypeTagging : 1;  // FLG_ENABLE_HANDLE_TYPE_TAGGING
+            ULONG HeapPageAllocs : 1;           // FLG_HEAP_PAGE_ALLOCS
+            ULONG DebugInitialCommandEx : 1;    // FLG_DEBUG_INITIAL_COMMAND_EX
+            ULONG DisableDbgPrint : 1;          // FLG_DISABLE_DBGPRINT
+            ULONG CritSecEventCreation : 1;     // FLG_CRITSEC_EVENT_CREATION
+            ULONG LdrTopDown : 1;               // FLG_LDR_TOP_DOWN
+            ULONG EnableHandleExceptions : 1;   // FLG_ENABLE_HANDLE_EXCEPTIONS
+            ULONG DisableProtDlls : 1;          // FLG_DISABLE_PROTDLLS
+        } NtGlobalFlags;
+    };
 
     //
     // Timeout for critical sections.
@@ -754,17 +792,17 @@ typedef struct _PEB
 } PEB, * PPEB;
 
 #ifdef _WIN64
-static_assert(FIELD_OFFSET(PEB, SessionId) == 0x2C0);
-//static_assert(sizeof(PEB) == 0x7B0); // REDSTONE3
-//static_assert(sizeof(PEB) == 0x7B8); // REDSTONE4
-//static_assert(sizeof(PEB) == 0x7C8); // REDSTONE5 // 19H1
-static_assert(sizeof(PEB) == 0x7d0); // WIN11
+static_assert(FIELD_OFFSET(PEB, SessionId) == 0x2C0, "FIELD_OFFSET(PEB, SessionId) is incorrect");
+//static_assert(sizeof(PEB) == 0x7B0, "Size of PEB is incorrect"); // REDSTONE3
+//static_assert(sizeof(PEB) == 0x7B8, "Size of PEB is incorrect"); // REDSTONE4
+//static_assert(sizeof(PEB) == 0x7C8, "Size of PEB is incorrect"); // REDSTONE5 // 19H1
+static_assert(sizeof(PEB) == 0x7d0, "Size of PEB is incorrect"); // WIN11
 #else
-static_assert(FIELD_OFFSET(PEB, SessionId) == 0x1D4);
-//static_assert(sizeof(PEB) == 0x468); // REDSTONE3
-//static_assert(sizeof(PEB) == 0x470); // REDSTONE4
-//static_assert(sizeof(PEB) == 0x480); // REDSTONE5 // 19H1
-static_assert(sizeof(PEB) == 0x488); // WIN11
+static_assert(FIELD_OFFSET(PEB, SessionId) == 0x1D4, "FIELD_OFFSET(PEB, SessionId) is incorrect");
+//static_assert(sizeof(PEB) == 0x468, "Size of PEB is incorrect"); // REDSTONE3
+//static_assert(sizeof(PEB) == 0x470, "Size of PEB is incorrect"); // REDSTONE4
+//static_assert(sizeof(PEB) == 0x480, "Size of PEB is incorrect"); // REDSTONE5 // 19H1
+static_assert(sizeof(PEB) == 0x488, "Size of PEB is incorrect"); // WIN11
 #endif
 
 #define GDI_BATCH_BUFFER_SIZE 310
@@ -1240,11 +1278,11 @@ typedef struct _TEB
 } TEB, *PTEB;
 
 #ifdef _WIN64
-//static_assert(sizeof(TEB) == 0x1850); // WIN11
-static_assert(sizeof(TEB) == 0x1878); // 24H2
+//static_assert(sizeof(TEB) == 0x1850, "Size of TEB is incorrect"); // WIN11
+static_assert(sizeof(TEB) == 0x1878, "Size of TEB is incorrect"); // 24H2
 #else
-//static_assert(sizeof(TEB) == 0x1018); // WIN11
-static_assert(sizeof(TEB) == 0x1038); // 24H2
+//static_assert(sizeof(TEB) == 0x1018, "Size of TEB is incorrect"); // WIN11
+static_assert(sizeof(TEB) == 0x1038, "Size of TEB is incorrect"); // 24H2
 #endif
 
 #endif
