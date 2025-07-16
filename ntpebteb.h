@@ -222,6 +222,16 @@ typedef VOID (NTAPI* PPS_POST_PROCESS_INIT_ROUTINE)(
 #define TLS_EXPANSION_SLOTS 1024
 #endif
 
+typedef struct _CHPEV2_PROCESS_INFO
+{
+    ULONG CpuFlags;
+    USHORT HostMachine;
+    USHORT GuestMachine;
+    PVOID SectionHandle;
+    PVOID SectionBase;
+    PVOID EtwInfo;
+} CHPEV2_PROCESS_INFO, *PCHPEV2_PROCESS_INFO;
+
 /**
  * Process Environment Block (PEB) structure.
  *
@@ -636,9 +646,9 @@ typedef struct _PEB
     PVOID PatchLoaderData;
 
     //
-    // Pointer to the CHPE V2 process information. CHPEV2_PROCESS_INFO
+    // Pointer to the CHPE V2 process information.
     //
-    PVOID ChpeV2ProcessInfo;
+    PCHPEV2_PROCESS_INFO ChpeV2ProcessInfo;
 
     //
     // Packaged process feature state.
@@ -860,6 +870,28 @@ typedef struct _TEB_ACTIVE_FRAME_EX
 
 #define STATIC_UNICODE_BUFFER_LENGTH 261
 #define WIN32_CLIENT_INFO_LENGTH 62
+
+typedef struct _CHPEV2_CPUAREA_INFO
+{
+    UCHAR InSimulation;
+    UCHAR InSyscallCallback;
+    UCHAR CriticalLockHeld;
+    UCHAR AvoidUpcallToKernel32;
+    PVOID EmulatorStackBase;
+    PVOID EmulatorStackLimit;
+    struct _AMD64_CONTEXT* ContextAmd64;
+    union
+    {
+        volatile LONG* SuspendDoorbell;
+        volatile LONG* Doorbell;
+    };
+    PVOID LoadingModuleModflag;
+    PVOID EmulatorData;
+    PVOID EmulatorData2;
+    PVOID EmulatorData3;
+    PVOID EmulatorData4;
+    UCHAR EmulatorDataInline[2048];
+} CHPEV2_CPUAREA_INFO, *PCHPEV2_CPUAREA_INFO;
 
 /**
  * Thread Environment Block (TEB) structure.
@@ -1209,7 +1241,7 @@ typedef struct _TEB
     PVOID ThreadPoolData;
     PVOID *TlsExpansionSlots;
 #ifdef _WIN64
-    PVOID ChpeV2CpuAreaInfo; // CHPEV2_CPUAREA_INFO // previously DeallocationBStore
+    PCHPEV2_CPUAREA_INFO ChpeV2CpuAreaInfo; // previously DeallocationBStore
     PVOID Unused; // previously BStoreLimit
 #endif
     ULONG MuiGeneration;
