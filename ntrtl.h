@@ -11337,7 +11337,7 @@ VOID
 STDAPIVCALLTYPE
 RtlRestoreContext(
     _In_ PCONTEXT ContextRecord,
-    _In_opt_ struct _EXCEPTION_RECORD* ExceptionRecord
+    _In_opt_ PEXCEPTION_RECORD ExceptionRecord
     );
 #endif // PHNT_VERSION >= PHNT_WINDOWS_11
 
